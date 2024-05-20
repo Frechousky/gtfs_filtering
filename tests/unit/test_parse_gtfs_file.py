@@ -14,7 +14,7 @@ def test_parse_gtfs_file__when_file_is_valid__returns_dataframe(tmp_path, valid_
     assert isinstance(res, pd.DataFrame), 'should be a DataFrame'
 
 
-def test_parse_gtfs_file__when_directory_does_not_exist__raises_error():
+def test_parse_gtfs_file__when_directory_does_not_exist__raises_file_not_found_error():
     directory = '/invalid/directory/'
     assert not os.path.exists(directory), 'directory should not exist'
 
@@ -22,14 +22,14 @@ def test_parse_gtfs_file__when_directory_does_not_exist__raises_error():
         parse_gtfs_file(directory, VALID_GTFS_FILE)
 
 
-def test_parse_gtfs_file__when_file_does_not_exist__raises_error(tmp_path, not_existing_file):
+def test_parse_gtfs_file__when_file_does_not_exist__raises_file_not_found_error(tmp_path, not_existing_file):
     assert not os.path.exists(os.path.join(tmp_path, NOT_EXISTING_FILE)), 'file should not exist'
 
     with pytest.raises(FileNotFoundError):
         parse_gtfs_file(tmp_path, NOT_EXISTING_FILE)
 
 
-def test_parse_gtfs_file__when_file_is_empty__raises_error(tmp_path, empty_gtfs_file):
+def test_parse_gtfs_file__when_file_is_empty__raises_empty_data_error(tmp_path, empty_gtfs_file):
     with open(os.path.join(tmp_path, EMPTY_FILE), 'r') as f:
         assert f.read() == '', 'file should be empty'
 

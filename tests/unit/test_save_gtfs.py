@@ -86,7 +86,7 @@ def test_save_gtfs__when_directory_does_not_exist__raises_os_error(gtfs_data):
         save_gtfs(gtfs_data, non_existent_dir)
 
 
-def test_save_gtfs__when_directory_is_not_writable__raises_permissionerror(gtfs_data, tmp_path):
+def test_save_gtfs__when_directory_is_not_writable__raises_permission_error(gtfs_data, tmp_path):
     # Create a non-writable directory
     unwritable_directory = os.path.join(tmp_path, 'unwritable_directory')
     os.makedirs(unwritable_directory)

@@ -40,7 +40,7 @@ def test_filter_by_route_id__filters_correctly(sample_gtfs):
     assert filtered_gtfs.calendar_dates.equals(sample_gtfs.calendar_dates), 'calendar_dates should be equal'
 
 
-def test_filter_by_route_id__no_matching_route_ids__returns_empty_gtfs(sample_gtfs):
+def test_filter_by_route_id__when_no_matching_route_ids__returns_empty_gtfs(sample_gtfs):
     filtered_gtfs = filter_by_route_id(sample_gtfs, ['R4'])
 
     assert not filtered_gtfs.agency.empty, 'agency should not be empty'

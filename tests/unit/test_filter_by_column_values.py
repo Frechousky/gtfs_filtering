@@ -23,7 +23,7 @@ def test_filter_by_column_values__when_valid_column_and_values__returns_filtered
     pd.testing.assert_frame_equal(result, expected_df)
 
 
-def test_filter_by_column_values__when_column_not_in_df__raises_keyerror():
+def test_filter_by_column_values__when_column_not_in_df__raises_key_error():
     data = {
         'A': ['foo', 'bar', 'baz', 'foo'],
         'B': [1, 2, 3, 4]

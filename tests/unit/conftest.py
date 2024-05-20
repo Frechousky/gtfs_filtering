@@ -12,7 +12,7 @@ MTA NYCT,MTA New York City Transit,http://www.mta.info,America/New_York,en,718-3
 
 @pytest.fixture()
 def valid_gtfs_file(tmp_path):
-    """create valid GTFS file for testing, delete it after test"""
+    """creates valid GTFS file for testing"""
     filepath = os.path.join(tmp_path, VALID_GTFS_FILE)
     with open(filepath, 'w') as f:
         f.write(VALID_GTFS_FILE_CONTENT)
@@ -20,7 +20,7 @@ def valid_gtfs_file(tmp_path):
 
 @pytest.fixture()
 def empty_gtfs_file(tmp_path):
-    """create an empty file for testing, delete it after test"""
+    """creates an empty file for testing"""
     filepath = os.path.join(tmp_path, EMPTY_FILE)
     with open(filepath, 'w') as f:
         f.write('')
@@ -28,7 +28,7 @@ def empty_gtfs_file(tmp_path):
 
 @pytest.fixture()
 def not_existing_file(tmp_path):
-    """delete file before testing if it exists"""
+    """deletes file before testing if it exists"""
     filepath = os.path.join(tmp_path, NOT_EXISTING_FILE)
     try:
         os.remove(filepath)

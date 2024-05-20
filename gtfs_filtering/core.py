@@ -9,13 +9,13 @@ import zipfile
 
 import pandas as pd
 
-ZIP_EXTRACT_TMP = '/tmp/gtfs-utils-zip_extract_tmp'
+ZIP_EXTRACT_TMP = os.path.join('tmp', 'gtfs-utils-zip_extract_tmp')
 
 
 @dataclasses.dataclass
 class GTFS:
     """
-    Dataclass to store static GTFS data
+    Stores static GTFS data
 
     Each field stores data from a single GTFS file, e.g. 'agency' field stores data from GTFS file 'agency.txt'
     """
@@ -118,7 +118,9 @@ def parse_gtfs(directory: str) -> GTFS:
     # load optional files
     for gtfs_file in OPTIONAL_GTFS_FILES:
         try:
-            gtfs.__setattr__(gtfs_file.rstrip('.txt'), parse_gtfs_file(directory, gtfs_file))
+            optional_file_content = parse_gtfs_file(directory, gtfs_file)
+            attr_name = gtfs_file.rstrip('.txt')
+            gtfs.__setattr__(attr_name, optional_file_content)
         except FileNotFoundError:
             # optional files may be missing
             pass
@@ -153,7 +155,7 @@ def save_gtfs(gtfs: GTFS, directory: str) -> None:
 
 def filter_by_column_values(df: pd.DataFrame, col_name: str, accepted_values: typing.List[str]) -> pd.DataFrame:
     """
-    Filter a dataframe by column such as a SQL 'IN' filtering
+    Filters a dataframe by column such as a SQL 'IN' filtering
 
     Keep rows with value in accepted values
     (discard rows with empty or different value)
@@ -175,7 +177,7 @@ def filter_by_column_values(df: pd.DataFrame, col_name: str, accepted_values: ty
 def filter_by_column_values_optional(df: pd.DataFrame, col_name: str,
                                      accepted_values: typing.List[str]) -> pd.DataFrame:
     """
-    Filter a dataframe by an optional column such as a SQL 'IN' filtering
+    Filters a dataframe by an optional column such as a SQL 'IN' filtering
 
     When column does not exist, do nothing
     When column exists, keep rows with value in accepted values or with an empty value
@@ -217,7 +219,7 @@ def get_unique_not_null_column_values(df: pd.DataFrame, col_name: str) -> typing
 
 def filter_by_route_id(gtfs_in: GTFS, route_ids: typing.List[str]) -> GTFS:
     """
-    Filter all GTFS files by route id
+    Filters all GTFS files by route id
 
     Args:
         gtfs_in: parsed GTFS input
@@ -333,7 +335,7 @@ def filter_by_route_id(gtfs_in: GTFS, route_ids: typing.List[str]) -> GTFS:
 
 def filter_by_trip_id(gtfs_in: GTFS, trip_ids: typing.List[str]) -> GTFS:
     """
-        Filter all GTFS files by trip id
+        Filters all GTFS files by trip id
 
         Args:
             gtfs_in: parsed GTFS input
