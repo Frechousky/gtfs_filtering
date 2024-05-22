@@ -3,7 +3,6 @@ import pytest
 
 from gtfs_filtering.core import filter_by_route_id, GTFS
 
-# TODO fix failing tests
 
 @pytest.fixture
 def sample_gtfs():
@@ -31,12 +30,16 @@ def test_filter_by_route_id__filters_correctly(sample_gtfs):
     filtered_gtfs = filter_by_route_id(sample_gtfs, ['R1'])
 
     assert filtered_gtfs.agency.equals(sample_gtfs.agency), 'agency should be equal'
-    assert filtered_gtfs.stops.equals(sample_gtfs.stops), 'stops should be equal'
-    assert filtered_gtfs.trips.equals(pd.DataFrame({'trip_id': ['T1'], 'route_id': ['R1']})), 'trips should be equal'
+    assert filtered_gtfs.stops.equals(
+        pd.DataFrame({'stop_id': ['S1'], 'stop_name': ['Stop 1'], 'parent_station': [None]})), 'stops should be equal'
+    assert filtered_gtfs.routes.equals(
+        pd.DataFrame({'route_id': ['R1'], 'route_short_name': ['1'], 'agency_id': ['A']}))
+    assert filtered_gtfs.trips.equals(
+        pd.DataFrame({'trip_id': ['T1'], 'route_id': ['R1'], 'service_id': ['S1']})), 'trips should be equal'
     assert filtered_gtfs.stop_times.equals(
-        pd.DataFrame({'trip_id': ['T1'], 'stop_id': ['S1']})), 'stops should be equal'
+        pd.DataFrame({'trip_id': ['T1'], 'stop_id': ['S1']})), 'stop_times should be equal'
     assert filtered_gtfs.calendar.equals(
-        pd.DataFrame({'service_id': ['S1'], 'monday': [1], 'tuesday': [1]})), 'calendar should be equal'
+        pd.DataFrame({'service_id': ['S1'], 'monday': [1], 'tuesday': [1]}, dtype=str)), 'calendar should be equal'
     assert filtered_gtfs.calendar_dates.equals(sample_gtfs.calendar_dates), 'calendar_dates should be equal'
 
 
@@ -56,12 +59,21 @@ def test_filter_by_route_id__multiple_matching_route_ids__filters_correctly(samp
     # With multiple matching route_ids
     filtered_gtfs = filter_by_route_id(sample_gtfs, ['R1', 'R2'])
 
-    assert filtered_gtfs.agency.equals(sample_gtfs.agency)
-    assert filtered_gtfs.stops.equals(sample_gtfs.stops)
-    assert filtered_gtfs.trips.equals(pd.DataFrame({'trip_id': ['T1', 'T2'], 'route_id': ['R1', 'R2']}))
-    assert filtered_gtfs.stop_times.equals(pd.DataFrame({'trip_id': ['T1', 'T2'], 'stop_id': ['S1', 'S2']}))
-    assert filtered_gtfs.calendar.equals(pd.DataFrame({'service_id': ['S1'], 'monday': [1], 'tuesday': [1]}))
-    assert filtered_gtfs.calendar_dates.equals(sample_gtfs.calendar_dates)
+    assert filtered_gtfs.agency.equals(sample_gtfs.agency), 'agency should be equal'
+    assert filtered_gtfs.stops.equals(
+        pd.DataFrame({'stop_id': ['S1', 'S2'], 'stop_name': ['Stop 1', 'Stop 2'], 'parent_station': [None, None]})),\
+        'stops should be equal'
+    assert filtered_gtfs.routes.equals(
+        pd.DataFrame({'route_id': ['R1', 'R2'], 'route_short_name': ['1', '2'], 'agency_id': ['A', 'A']})), \
+        'routes should be equal'
+    assert filtered_gtfs.trips.equals(
+        pd.DataFrame({'trip_id': ['T1', 'T2'], 'route_id': ['R1', 'R2'], 'service_id': ['S1', 'S2']})), \
+        'trips should be equal'
+    assert filtered_gtfs.stop_times.equals(
+        pd.DataFrame({'trip_id': ['T1', 'T2'], 'stop_id': ['S1', 'S2']})), 'stop_times should be equal'
+    assert filtered_gtfs.calendar.equals(
+        pd.DataFrame({'service_id': ['S1', 'S2'], 'monday': [1, 0], 'tuesday': [1, 0]}, dtype=str)), 'calendar should be equal'
+    assert filtered_gtfs.calendar_dates.equals(sample_gtfs.calendar_dates), 'calendar_dates should be equal'
 
 
 def test_filter_by_route_id__empty_route_ids__returns_empty_gtfs(sample_gtfs):
@@ -77,28 +89,35 @@ def test_filter_by_route_id__empty_route_ids__returns_empty_gtfs(sample_gtfs):
     assert filtered_gtfs.calendar_dates.empty, 'calendar_dates should be empty'
 
 
-def test_filter_by_route_id__no_calendar_or_calendar_dates__handles_correctly(sample_gtfs):
-    # With no calendar or calendar_dates
+def test_filter_by_route_id__no_calendar__handles_correctly(sample_gtfs):
     sample_gtfs_no_calendar = GTFS(**sample_gtfs.__dict__)
     sample_gtfs_no_calendar.calendar = None
 
+    filtered_gtfs_no_calendar = filter_by_route_id(sample_gtfs_no_calendar, ['R1'])
+    assert filtered_gtfs_no_calendar.agency.equals(sample_gtfs_no_calendar.agency), 'agency should be equal'
+    assert filtered_gtfs_no_calendar.stops.equals(
+        pd.DataFrame({'stop_id': ['S1'], 'stop_name': ['Stop 1'], 'parent_station': [None]})), 'stops should be equal'
+    assert filtered_gtfs_no_calendar.trips.equals(
+        pd.DataFrame({'trip_id': ['T1'], 'route_id': ['R1'], 'service_id': ['S1']})), 'trips should be equal'
+    assert filtered_gtfs_no_calendar.stop_times.equals(pd.DataFrame({'trip_id': ['T1'], 'stop_id': ['S1']})), \
+        'stop_times should be equal'
+    assert filtered_gtfs_no_calendar.calendar is None, 'calendar should be none'
+    assert filtered_gtfs_no_calendar.calendar_dates.equals(sample_gtfs_no_calendar.calendar_dates), \
+        'calendar_dates should be equal'
+
+
+def test_filter_by_route_id__no_calendar_dates__handles_correctly(sample_gtfs):
     sample_gtfs_no_calendar_dates = GTFS(**sample_gtfs.__dict__)
     sample_gtfs_no_calendar_dates.calendar_dates = None
 
-    # Test with no calendar
-    filtered_gtfs_no_calendar = filter_by_route_id(sample_gtfs_no_calendar, ['R1'])
-    assert filtered_gtfs_no_calendar.agency.equals(sample_gtfs_no_calendar.agency)
-    assert filtered_gtfs_no_calendar.stops.equals(sample_gtfs_no_calendar.stops)
-    assert filtered_gtfs_no_calendar.trips.equals(pd.DataFrame({'trip_id': ['T1'], 'route_id': ['R1']}))
-    assert filtered_gtfs_no_calendar.stop_times.equals(pd.DataFrame({'trip_id': ['T1'], 'stop_id': ['S1']}))
-    assert filtered_gtfs_no_calendar.calendar is None
-    assert filtered_gtfs_no_calendar.calendar_dates.equals(sample_gtfs_no_calendar.calendar_dates)
-
-    # Test with no calendar_dates
     filtered_gtfs_no_calendar_dates = filter_by_route_id(sample_gtfs_no_calendar_dates, ['R1'])
-    assert filtered_gtfs_no_calendar_dates.agency.equals(sample_gtfs_no_calendar_dates.agency)
-    assert filtered_gtfs_no_calendar_dates.stops.equals(sample_gtfs_no_calendar_dates.stops)
-    assert filtered_gtfs_no_calendar_dates.trips.equals(pd.DataFrame({'trip_id': ['T1'], 'route_id': ['R1']}))
-    assert filtered_gtfs_no_calendar_dates.stop_times.equals(pd.DataFrame({'trip_id': ['T1'], 'stop_id': ['S1']}))
-    assert filtered_gtfs_no_calendar_dates.calendar.equals(sample_gtfs_no_calendar_dates.calendar)
-    assert filtered_gtfs_no_calendar_dates.calendar_dates is None
+    assert filtered_gtfs_no_calendar_dates.agency.equals(filtered_gtfs_no_calendar_dates.agency), 'agency should be equal'
+    assert filtered_gtfs_no_calendar_dates.stops.equals(
+        pd.DataFrame({'stop_id': ['S1'], 'stop_name': ['Stop 1'], 'parent_station': [None]})), 'stops should be equal'
+    assert filtered_gtfs_no_calendar_dates.trips.equals(
+        pd.DataFrame({'trip_id': ['T1'], 'route_id': ['R1'], 'service_id': ['S1']})), 'trips should be equal'
+    assert filtered_gtfs_no_calendar_dates.stop_times.equals(pd.DataFrame({'trip_id': ['T1'], 'stop_id': ['S1']})), \
+        'stop_times should be equal'
+    assert filtered_gtfs_no_calendar_dates.calendar.equals(filtered_gtfs_no_calendar_dates.calendar), \
+        'calendar_dates should be equal'
+    assert filtered_gtfs_no_calendar_dates.calendar_dates is None, 'calendar_dates should be none'
