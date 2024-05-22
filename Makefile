@@ -1,4 +1,6 @@
 VENV_FOLDER=venv
+TESTS_E2E_FOLDER=tests/e2e
+TESTS_UNIT_FOLDER=tests/unit
 TOUCH_FILE=$(VENV_FOLDER)/touch
 PIP=pip3
 PYTHON=python3
@@ -20,7 +22,13 @@ clean:
 	rm -rf $(VENV_FOLDER)
 	find -iname "*.pyc" -delete
 
+e2e: $(VENV_FOLDER)
+	pytest "$(TESTS_E2E_FOLDER)"
+
+unit: $(VENV_FOLDER)
+	pytest "$(TESTS_UNIT_FOLDER)"
+
 test: $(VENV_FOLDER)
 	pytest
 
-.PHONY: clean
+.PHONY: clean e2e unit test
