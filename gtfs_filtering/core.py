@@ -347,6 +347,7 @@ def filter_by_trip_id(gtfs_in: GTFS, trip_ids: typing.List[str]) -> GTFS:
     trips = gtfs_in.trips
     filtered_trips = filter_by_column_values(trips, 'trip_id', trip_ids)
     route_ids = get_unique_not_null_column_values(filtered_trips, 'route_id')
+    gtfs_in.trips = filtered_trips
     return filter_by_route_id(gtfs_in, route_ids)
 
 
