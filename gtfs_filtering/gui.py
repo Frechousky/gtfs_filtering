@@ -97,7 +97,7 @@ class MainWindow(QMainWindow):
 
         # Filter values
         self.filter_values_list = QListWidget()
-        self.filter_values_list.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+        self.filter_values_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
 
         # Delete filter values
         self.delete_filter_values_push_button = QPushButton(DELETE_FILTER_VALUES_LABEL)
