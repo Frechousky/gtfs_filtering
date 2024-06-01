@@ -22,13 +22,16 @@ clean:
 	rm -rf $(VENV_FOLDER)
 	find -iname "*.pyc" -delete
 
+# end to end testing
 e2e: $(VENV_FOLDER)
 	pytest "$(TESTS_E2E_FOLDER)"
 
+# unit testing
 unit: $(VENV_FOLDER)
 	pytest "$(TESTS_UNIT_FOLDER)"
 
-test: $(VENV_FOLDER)
+# all tests
+tests: $(VENV_FOLDER)
 	pytest
 
-.PHONY: clean e2e unit test
+.PHONY: clean e2e unit tests
