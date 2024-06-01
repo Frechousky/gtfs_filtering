@@ -14,15 +14,15 @@ from gtfs_filtering.core import FilterType, perform_filter
 
 APP_NAME = "GTFS Filtering"
 
-WARNING_NO_FILTER_VALUES = "Veuillez sélectionner au moins un valeur à filtrer"
-WARNING_INPUT_GTFS_NOT_SELECTED = "Veuillez sélectionner le GTFS à filtrer"
-ERROR_READING_INPUT_GTFS = ("Erreur lors de la lecture du GTFS à filtrer. Vérifier que le GTFS existe et qu'il est "
+WARNING_NO_FILTER_VALUES_LABEL = "Veuillez sélectionner au moins un valeur à filtrer"
+WARNING_INPUT_GTFS_NOT_SELECTED_LABEL = "Veuillez sélectionner le GTFS à filtrer"
+ERROR_READING_INPUT_GTFS_LABEL = ("Erreur lors de la lecture du GTFS à filtrer. Vérifier que le GTFS existe et qu'il est "
                             "valide")
 ERROR_LABEL = "Erreur"
 SUCCESS_LABEL = "Succès"
 WARNING_LABEL = "Avertissement"
 FILTER_VALUES_LABEL = "Valeur à filtrer"
-FILTERING_IS_SUCCESSFUL = "Filtrage réaliser avec succès"
+FILTERING_IS_SUCCESSFUL_LABEL = "Filtrage réaliser avec succès"
 START_FILTERING_LABEL = "Lancer le filtrage"
 OUTPUT_GTFS_FOLDER_SELECT_CAPTION_LABEL = "Sélectionner le dossier de sortie"
 INPUT_GTFS_SELECT_FILTER_LABEL = "Fichier zip (*.zip)"
@@ -162,7 +162,7 @@ class MainWindow(QMainWindow):
             routes = read_csv(routes_str)
             trips = read_csv(trips_str)
         except Exception:
-            open_error_message_box(ERROR_READING_INPUT_GTFS)
+            open_error_message_box(ERROR_READING_INPUT_GTFS_LABEL)
         self.model.route_ids_from_input_gtfs = routes['route_id'].tolist()
         self.model.trip_ids_from_input_gtfs = trips['trip_id'].tolist()
         self.model.route_ids_from_input_gtfs.sort()
@@ -202,17 +202,17 @@ class MainWindow(QMainWindow):
 
     def on__start_filtering_push_button__clicked_handler(self):
         if not self.model.input_gtfs_zip:
-            open_warning_message_box(WARNING_INPUT_GTFS_NOT_SELECTED)
+            open_warning_message_box(WARNING_INPUT_GTFS_NOT_SELECTED_LABEL)
             return
         filter_values = self._get_filter_values()
         if not filter_values:
-            open_warning_message_box(WARNING_NO_FILTER_VALUES)
+            open_warning_message_box(WARNING_NO_FILTER_VALUES_LABEL)
             return
         self._disable_all_inputs(True)
         try:
             perform_filter(self.model.input_gtfs_zip, self.model.output_gtfs_zip_fullpath(), self._get_filter_type(),
                            filter_values, self._is_overwrite_output_gtfs())
-            open_success_message_box(FILTERING_IS_SUCCESSFUL)
+            open_success_message_box(FILTERING_IS_SUCCESSFUL_LABEL)
         except Exception as e:
             open_error_message_box(str(e))
         self._disable_all_inputs(False)
