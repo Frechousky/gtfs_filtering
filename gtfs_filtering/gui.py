@@ -8,34 +8,34 @@ from zipfile import ZipFile
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QLineEdit, QMainWindow, QPushButton, QWidget,
                              QFileDialog, QFormLayout, QMessageBox, QListWidget, QAbstractItemView)
-from pandas import read_csv
 
 from gtfs_filtering.core import FilterType, perform_filter
+from pandas import read_csv
 
 APP_NAME = "GTFS Filtering"
 
-WARNING_NO_FILTER_VALUES_LABEL = "Veuillez sélectionner au moins un valeur à filtrer"
-WARNING_INPUT_GTFS_NOT_SELECTED_LABEL = "Veuillez sélectionner le GTFS à filtrer"
-ERROR_READING_INPUT_GTFS_LABEL = ("Erreur lors de la lecture du GTFS à filtrer. Vérifier que le GTFS existe et qu'il est "
-                            "valide")
+DELETE_FILTER_VALUES_LABEL = "Supprimer la/les valeur(s) à filtrer sélectionnée(s)"
 ERROR_LABEL = "Erreur"
-SUCCESS_LABEL = "Succès"
-WARNING_LABEL = "Avertissement"
-FILTER_VALUES_LABEL = "Valeurs à filtrer"
+ERROR_READING_INPUT_GTFS_LABEL = (
+    "Erreur lors de la lecture du GTFS à filtrer. Vérifier que le GTFS existe et qu'il est valide")
 FILTERING_IS_SUCCESSFUL_LABEL = "Filtrage réaliser avec succès"
-START_FILTERING_LABEL = "Lancer le filtrage"
-OUTPUT_GTFS_FOLDER_SELECT_CAPTION_LABEL = "Sélectionner le dossier de sortie"
-INPUT_GTFS_SELECT_FILTER_LABEL = "Fichier zip (*.zip)"
-INPUT_GTFS_SELECT_CAPTION_LABEL = "Sélectionner le GTFS à filtrer"
 FILTER_TYPE_LABEL = "Type de filtre"
-OVERWRITE_OUTPUT_GTFS_LABEL = "Ecraser le GTFS de sortie s'il existe ?"
-OUTPUT_GTFS_FULLPATH_LABEL = "Chemin complet vers l'archive de sortie"
-OUTPUT_GTFS_FOLDER_LABEL = "Sélection du répertoire de sortie"
-OUTPUT_GTFS_FILENAME_LABEL = "Nom de l'archive de sortie"
+FILTER_VALUES_LABEL = "Valeurs à filtrer"
 INPUT_GTFS_LABEL = "GTFS à filtrer"
+INPUT_GTFS_SELECT_CAPTION_LABEL = "Sélectionner le GTFS à filtrer"
+INPUT_GTFS_SELECT_FILTER_LABEL = "Fichier zip (*.zip)"
+OUTPUT_GTFS_FILENAME_LABEL = "Nom de l'archive de sortie"
+OUTPUT_GTFS_FOLDER_LABEL = "Sélection du répertoire de sortie"
+OUTPUT_GTFS_FOLDER_SELECT_CAPTION_LABEL = "Sélectionner le dossier de sortie"
+OUTPUT_GTFS_FULLPATH_LABEL = "Chemin complet vers l'archive de sortie"
+OVERWRITE_OUTPUT_GTFS_LABEL = "Ecraser le GTFS de sortie s'il existe ?"
 SELECT_INPUT_GTFS_LABEL = "Sélection du GTFS à filtrer (.zip)"
 SELECT_LABEL = "Sélectionner"
-DELETE_FILTER_VALUES_LABEL = "Supprimer la/les valeur(s) à filtrer sélectionnée(s)"
+START_FILTERING_LABEL = "Lancer le filtrage"
+SUCCESS_LABEL = "Succès"
+WARNING_INPUT_GTFS_NOT_SELECTED_LABEL = "Veuillez sélectionner le GTFS à filtrer"
+WARNING_LABEL = "Avertissement"
+WARNING_NO_FILTER_VALUES_LABEL = "Veuillez sélectionner au moins une valeur à filtrer"
 
 
 @dataclass
@@ -113,7 +113,8 @@ class MainWindow(QMainWindow):
         self.output_gtfs_zip_folder_select_button.clicked.connect(
             self.on__select_output_gtfs_zip_folder__clicked_handler)
         self.filter_type_select.currentIndexChanged.connect(self.on__filter_type_select__current_index_changed_handler)
-        self.delete_filter_values_push_button.clicked.connect(self.on__delete_filter_values_push_button__clicked_handler)
+        self.delete_filter_values_push_button.clicked.connect(
+            self.on__delete_filter_values_push_button__clicked_handler)
         self.start_filtering_push_button.clicked.connect(self.on__start_filtering_push_button__clicked_handler)
 
         # Add widgets to main_layout

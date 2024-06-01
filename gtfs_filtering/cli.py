@@ -2,7 +2,6 @@
 import typing
 
 import click
-
 from gtfs_filtering.core import perform_filter, FilterType
 
 
