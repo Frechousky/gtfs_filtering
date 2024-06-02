@@ -1,4 +1,5 @@
 VENV_FOLDER=venv
+DIST_FOLDER=dist
 TESTS_E2E_FOLDER=tests/e2e
 TESTS_UNIT_FOLDER=tests/unit
 TOUCH_FILE=$(VENV_FOLDER)/touch
@@ -19,7 +20,7 @@ $(TOUCH_FILE): $(REQS_TXT)
 
 # deletes venv folder and *.pyc files
 clean:
-	rm -rf $(VENV_FOLDER)
+	rm -rf $(VENV_FOLDER) $(DIST_FOLDER)
 	find -iname "*.pyc" -delete
 
 # end to end testing
@@ -33,5 +34,21 @@ unit: $(VENV_FOLDER)
 # all tests
 tests: $(VENV_FOLDER)
 	pytest
+# build CLI executable
+$(DIST_FOLDER)/cli: $(VENV_FOLDER)
+	pyinstaller -F gtfs_filtering/cli.py
+	rm -rf build/
+	rm cli.spec
+
+package-cli: $(DIST_FOLDER)/cli
+
+# build GUI executable
+$(DIST_FOLDER)/gui: $(VENV_FOLDER)
+	pyinstaller -F gtfs_filtering/gui.py
+	rm -rf build/
+	rm gui.spec
 
 .PHONY: clean e2e unit tests
+package-gui: $(DIST_FOLDER)/gui
+
+.PHONY: clean e2e unit tests package-cli package-gui
