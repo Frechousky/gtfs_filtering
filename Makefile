@@ -4,17 +4,17 @@ TESTS_UNIT_FOLDER=tests/unit
 TOUCH_FILE=$(VENV_FOLDER)/touch
 PIP=pip3
 PYTHON=python3
-REQ_TXT=requirements.txt
+REQS_TXT=requirements-core.txt requirements-cli.txt requirements-gui.txt requirements-packaging.txt requirements-tests.txt
 
 # creates venv folder
 $(VENV_FOLDER): $(TOUCH_FILE)
 
-# update venv deps if requirements.txt file is updated
-$(TOUCH_FILE): $(REQ_TXT)
+# update venv deps if requirements-*.txt file are updated
+$(TOUCH_FILE): $(REQS_TXT)
 	test -d venv || virtualenv "$(VENV_FOLDER)"
 	source "$(VENV_FOLDER)/bin/activate" \
 	&& "$(PIP)" install --upgrade pip \
-	&& "$(PIP)" install -r "$(REQ_TXT)" \
+	&& for f in $(REQS_TXT); do "$(PIP)" install -r "$$f"; done \
 	&& touch "$(TOUCH_FILE)"
 
 # deletes venv folder and *.pyc files

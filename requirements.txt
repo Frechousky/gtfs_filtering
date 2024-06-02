@@ -1,4 +1,0 @@
-click==8.*
-pandas==2.*
-pytest==8.*
-PyQt6==6.*
