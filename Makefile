@@ -24,7 +24,7 @@ clean:
 	find -iname "*.pyc" -delete
 
 # end to end testing
-e2e: $(VENV_FOLDER)
+e2e: $(VENV_FOLDER) package-cli
 	pytest "$(TESTS_E2E_FOLDER)"
 
 # unit testing
@@ -32,8 +32,8 @@ unit: $(VENV_FOLDER)
 	pytest "$(TESTS_UNIT_FOLDER)"
 
 # all tests
-tests: $(VENV_FOLDER)
-	pytest
+tests: unit e2e
+
 # build CLI executable
 $(DIST_FOLDER)/cli: $(VENV_FOLDER)
 	pyinstaller -F gtfs_filtering/cli.py
@@ -48,7 +48,6 @@ $(DIST_FOLDER)/gui: $(VENV_FOLDER)
 	rm -rf build/
 	rm gui.spec
 
-.PHONY: clean e2e unit tests
 package-gui: $(DIST_FOLDER)/gui
 
 .PHONY: clean e2e unit tests package-cli package-gui
