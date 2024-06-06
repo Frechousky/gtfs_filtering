@@ -67,9 +67,9 @@ def parse_gtfs_file(directory: str, filename: str) -> DataFrame:
         parsed GTFS file
 
     Raises:
-        FileNotFoundError: when directory does not exist
-        FileNotFoundError: when filename does not exist
-        pd.errors.EmptyDataError: when file content is empty
+        FileNotFoundError when directory does not exist
+        FileNotFoundError when filename does not exist
+        pd.errors.EmptyDataError when file content is empty
     """
     with open(join(directory, filename), 'r') as gtfs_entity_txt:
         return read_csv(gtfs_entity_txt, dtype=str)
@@ -90,7 +90,7 @@ def parse_gtfs(directory: str) -> GTFS:
         Parsed GTFS files
 
     Raises:
-        FileNotFoundError: when a required GTFS file is missing
+        FileNotFoundError when a required GTFS file is missing
     """
     try:
         # required files in GTFS archive
@@ -331,6 +331,24 @@ class FilterType(StrEnum):
 
 def perform_filter(input_gtfs_zip: str, output_gtfs_zip: str, filter_type: FilterType, filter_values: List[str],
                    overwrite_output_gtfs: bool) -> None:
+    """
+        Unzip input_gtfs_zip, parse and filter it by route_id or trip_id.
+        Filtered GTFS is zipped in output_gtfs_zip.
+        Clean all files generated except output_gtfs_zip.
+
+        Args:
+            input_gtfs_zip: fullpath GTFS zip to filter
+            output_gtfs_zip: fullpath to filtered GTFS zip
+            filter_type: type of filtering to perform
+            filter_values: values to keep (values not in filter_values are discarded)
+            overwrite_output_gtfs: flag to overwrite output_gtfs_zip if it already exists
+        
+        Raises:
+            FileExistsError when overwrite_output_gtfs is False and output_gtfs_zip already exists
+            FileNotFoundError when a required GTFS file is missing
+            PermissionError when output directory is not writable
+            ValueError when filter type is invalid
+    """
     if isfile(output_gtfs_zip) and not overwrite_output_gtfs:
         raise FileExistsError(f"File '{output_gtfs_zip}' already exists.")
     try:
