@@ -35,7 +35,7 @@ unit: $(VENV_FOLDER)
 tests: unit e2e
 
 # build CLI executable
-$(DIST_FOLDER)/cli: $(VENV_FOLDER)
+$(DIST_FOLDER)/cli: $(VENV_FOLDER) gtfs_filtering/core.py gtfs_filtering/cli.py
 	pyinstaller -F gtfs_filtering/cli.py
 	rm -rf build/
 	rm cli.spec
@@ -43,7 +43,7 @@ $(DIST_FOLDER)/cli: $(VENV_FOLDER)
 package-cli: $(DIST_FOLDER)/cli
 
 # build GUI executable
-$(DIST_FOLDER)/gui: $(VENV_FOLDER)
+$(DIST_FOLDER)/gui: $(VENV_FOLDER) gtfs_filtering/core.py gtfs_filtering/gui.py
 	pyinstaller -F gtfs_filtering/gui.py
 	rm -rf build/
 	rm gui.spec
