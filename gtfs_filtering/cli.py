@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from typing import List
 
-from click import command, option, argument, Choice, Path
+from click import command, option, argument, Choice, Path, ClickException
 from gtfs_filtering.core import perform_filter, FilterType
 
 
@@ -15,7 +15,16 @@ from gtfs_filtering.core import perform_filter, FilterType
 @argument('filter_values', nargs=-1, required=True)
 def cli(overwrite: bool, filter_type: str, input_gtfs_zip: str, output_gtfs_zip: str,
         filter_values: List[str]):
-    perform_filter(input_gtfs_zip, output_gtfs_zip, FilterType(filter_type), filter_values, overwrite)
+    try:
+        perform_filter(input_gtfs_zip, output_gtfs_zip, FilterType(filter_type), filter_values, overwrite)
+    except FileExistsError as e:
+        raise ClickException(str(e))
+    except FileNotFoundError as e:
+        raise ClickException(str(e))
+    except PermissionError as e:
+        raise ClickException(str(e))
+    except ValueError as e:
+        raise ClickException(str(e))
 
 
 if __name__ == '__main__':
