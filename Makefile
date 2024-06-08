@@ -1,53 +1,47 @@
-VENV_FOLDER=venv
 DIST_FOLDER=dist
 TESTS_E2E_FOLDER=tests/e2e
 TESTS_UNIT_FOLDER=tests/unit
-TOUCH_FILE=$(VENV_FOLDER)/touch
-PIP=pip3
-PYTHON=python3
-REQS_TXT=requirements-core.txt requirements-cli.txt requirements-gui.txt requirements-packaging.txt requirements-tests.txt
 
-# creates venv folder
-$(VENV_FOLDER): $(TOUCH_FILE)
+# dependencies installation
+install-deps:
+	pipenv sync
+install-all-deps:
+	pipenv sync -d
+update-deps:
+	pipenv update
 
-# update venv deps if requirements-*.txt file are updated
-$(TOUCH_FILE): $(REQS_TXT)
-	test -d venv || virtualenv "$(VENV_FOLDER)"
-	source "$(VENV_FOLDER)/bin/activate" \
-	&& "$(PIP)" install --upgrade pip \
-	&& for f in $(REQS_TXT); do "$(PIP)" install -r "$$f"; done \
-	&& touch "$(TOUCH_FILE)"
+# linting & formatting
+lint:
+	pipenv run ruff check .
+lint-fix:
+	pipenv run ruff check . --fix
+format:
+	pipenv run ruff format --check .
+format-fix:
+	pipenv run ruff format .
 
-# deletes venv folder and *.pyc files
-clean:
-	rm -rf $(VENV_FOLDER) $(DIST_FOLDER)
-	find -iname "*.pyc" -delete
-
-# end to end testing
-e2e: $(VENV_FOLDER) package-cli
-	pytest "$(TESTS_E2E_FOLDER)"
-
-# unit testing
-unit: $(VENV_FOLDER)
-	pytest "$(TESTS_UNIT_FOLDER)"
-
-# all tests
+# testing
+e2e: package-cli
+	pipenv run pytest "$(TESTS_E2E_FOLDER)"
+unit:
+	pipenv run pytest "$(TESTS_UNIT_FOLDER)"
 tests: unit e2e
 
-# build CLI executable
-$(DIST_FOLDER)/cli: $(VENV_FOLDER) gtfs_filtering/core.py gtfs_filtering/cli.py
-	pyinstaller -F gtfs_filtering/cli.py
+# packaging
+$(DIST_FOLDER)/cli: gtfs_filtering/core.py gtfs_filtering/cli.py
+	@echo "package cli application"
+	pipenv run pyinstaller -F gtfs_filtering/cli.py 2>&1 > /dev/null
 	rm -rf build/
 	rm cli.spec
-
-package-cli: $(DIST_FOLDER)/cli
-
-# build GUI executable
-$(DIST_FOLDER)/gui: $(VENV_FOLDER) gtfs_filtering/core.py gtfs_filtering/gui.py
-	pyinstaller -F gtfs_filtering/gui.py
+$(DIST_FOLDER)/gui: gtfs_filtering/core.py gtfs_filtering/gui.py
+	@echo "package gui application"
+	pipenv run pyinstaller -F gtfs_filtering/gui.py 2>&1 > /dev/null
 	rm -rf build/
 	rm gui.spec
-
+package-cli: $(DIST_FOLDER)/cli
 package-gui: $(DIST_FOLDER)/gui
 
-.PHONY: clean e2e unit tests package-cli package-gui
+clean:
+	rm -rf dist/ .pytest_cache/ .ruff_cache
+
+.PHONY: install-deps install-all-deps update-deps lint lint-fix format format-check e2e unit tests package-cli package-gui clean
