@@ -30,14 +30,12 @@ tests: unit e2e
 # packaging
 $(DIST_FOLDER)/cli: gtfs_filtering/core.py gtfs_filtering/cli.py
 	@echo "package cli application"
-	pipenv run pyinstaller -F gtfs_filtering/cli.py 2>&1 > /dev/null
-	rm -rf build/
-	rm cli.spec
+	pipenv run pyinstaller -F gtfs_filtering/cli.py
+	rm -rf build/ cli.spec
 $(DIST_FOLDER)/gui: gtfs_filtering/core.py gtfs_filtering/gui.py
 	@echo "package gui application"
-	pipenv run pyinstaller -F gtfs_filtering/gui.py 2>&1 > /dev/null
-	rm -rf build/
-	rm gui.spec
+	pipenv run pyinstaller -F gtfs_filtering/gui.py
+	rm -rf build/ gui.spec
 package-cli: $(DIST_FOLDER)/cli
 package-gui: $(DIST_FOLDER)/gui
 
