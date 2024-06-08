@@ -1,59 +1,58 @@
 #!/usr/bin/env python3
+import dataclasses
+import enum
 import logging
-from dataclasses import dataclass, fields
-from enum import StrEnum
-from os.path import join, isfile
-from shutil import make_archive, rmtree
-from typing import Optional, List
-from zipfile import ZipFile
+import os
+import shutil
+import typing
+import zipfile
 
-from pandas.errors import EmptyDataError
+import pandas
 
-from pandas import DataFrame, read_csv
+ZIP_EXTRACT_TMP = os.path.join('tmp', 'gtfs-utils-zip_extract_tmp')
 
 ZIP_EXTRACT_TMP = join('tmp', 'gtfs-utils-zip_extract_tmp')
 
 
-@dataclass
+@dataclasses.dataclass
 class GTFS:
     """
     Stores static GTFS data
 
     Each field stores data from a single GTFS file, e.g. 'agency' field stores data from GTFS file 'agency.txt'
     """
-    agency: Optional[DataFrame] = None
-    stops: Optional[DataFrame] = None
-    routes: Optional[DataFrame] = None
-    trips: Optional[DataFrame] = None
-    stop_times: Optional[DataFrame] = None  # optional
-    calendar: Optional[DataFrame] = None  # optional
-    calendar_dates: Optional[DataFrame] = None  # optional
-    fare_attributes: Optional[DataFrame] = None  # optional
-    fare_rules: Optional[DataFrame] = None  # optional
-    fare_media: Optional[DataFrame] = None  # optional
-    fare_products: Optional[DataFrame] = None  # optional
-    fare_leg_rules: Optional[DataFrame] = None  # optional
-    fare_transfer_rules: Optional[DataFrame] = None  # optional
-    areas: Optional[DataFrame] = None  # optional
-    stop_areas: Optional[DataFrame] = None  # optional
-    shapes: Optional[DataFrame] = None  # optional
-    frequencies: Optional[DataFrame] = None  # optional
-    transfers: Optional[DataFrame] = None  # optional
-    pathways: Optional[DataFrame] = None  # optional
-    levels: Optional[DataFrame] = None  # optional
-    translations: Optional[DataFrame] = None  # optional
-    feed_info: Optional[DataFrame] = None  # optional
-    attributions: Optional[DataFrame] = None  # optional
+    agency: typing.Optional[pandas.DataFrame] = None
+    stops: typing.Optional[pandas.DataFrame] = None
+    routes: typing.Optional[pandas.DataFrame] = None
+    trips: typing.Optional[pandas.DataFrame] = None
+    stop_times: typing.Optional[pandas.DataFrame] = None  # optional
+    calendar: typing.Optional[pandas.DataFrame] = None  # optional
+    calendar_dates: typing.Optional[pandas.DataFrame] = None  # optional
+    fare_attributes: typing.Optional[pandas.DataFrame] = None  # optional
+    fare_rules: typing.Optional[pandas.DataFrame] = None  # optional
+    fare_media: typing.Optional[pandas.DataFrame] = None  # optional
+    fare_products: typing.Optional[pandas.DataFrame] = None  # optional
+    fare_leg_rules: typing.Optional[pandas.DataFrame] = None  # optional
+    fare_transfer_rules: typing.Optional[pandas.DataFrame] = None  # optional
+    areas: typing.Optional[pandas.DataFrame] = None  # optional
+    stop_areas: typing.Optional[pandas.DataFrame] = None  # optional
+    shapes: typing.Optional[pandas.DataFrame] = None  # optional
+    frequencies: typing.Optional[pandas.DataFrame] = None  # optional
+    transfers: typing.Optional[pandas.DataFrame] = None  # optional
+    pathways: typing.Optional[pandas.DataFrame] = None  # optional
+    levels: typing.Optional[pandas.DataFrame] = None  # optional
+    translations: typing.Optional[pandas.DataFrame] = None  # optional
+    feed_info: typing.Optional[pandas.DataFrame] = None  # optional
+    attributions: typing.Optional[pandas.DataFrame] = None  # optional
 
 
 OPTIONAL_GTFS_FILES = ['stop_times.txt', 'calendar.txt', 'calendar_dates.txt', 'fare_attributes.txt', 'fare_rules.txt',
                        'fare_media.txt', 'fare_products.txt', 'fare_leg_rules.txt', 'fare_transfer_rules.txt',
-                       'areas.txt',
-                       'stop_areas.txt', 'shapes.txt', 'frequencies.txt', 'transfers.txt', 'pathways.txt', 'levels.txt',
-                       'translations.txt', 'feed_info.txt', 'attributions.txt', ]
+                       'areas.txt', 'stop_areas.txt', 'shapes.txt', 'frequencies.txt', 'transfers.txt', 'pathways.txt',
+                       'levels.txt', 'translations.txt', 'feed_info.txt', 'attributions.txt', ]
 
 
-def parse_gtfs_file(directory: str, filename: str) -> DataFrame:
+def parse_gtfs_file(directory: str, filename: str) -> pandas.DataFrame:
     """
     Parses a single GTFS file from a directory
 
@@ -69,10 +68,10 @@ def parse_gtfs_file(directory: str, filename: str) -> DataFrame:
     Raises:
         FileNotFoundError when directory does not exist
         FileNotFoundError when filename does not exist
-        pd.errors.EmptyDataError when file content is empty
+        pd.errors.pandas.errors.EmptyDataError when file content is empty
     """
-    with open(join(directory, filename), 'r') as gtfs_entity_txt:
-        return read_csv(gtfs_entity_txt, dtype=str)
+    with open(os.path.join(directory, filename), 'r') as gtfs_entity_txt:
+        return pandas.read_csv(gtfs_entity_txt, dtype=str)
 
 
 def parse_gtfs(directory: str) -> GTFS:
@@ -110,7 +109,7 @@ def parse_gtfs(directory: str) -> GTFS:
         except FileNotFoundError:
             # optional files may be missing
             pass
-        except EmptyDataError:
+        except pandas.errors.EmptyDataError:
             logging.warning(f'File {gtfs_file} is present but empty, ignores it')
 
     return gtfs
@@ -134,13 +133,13 @@ def save_gtfs(gtfs: GTFS, directory: str) -> None:
         OSError when directory does not exist
         PermissionError when directory is not writable
     """
-    for field in fields(gtfs):
-        gtfs_data: DataFrame = gtfs.__getattribute__(field.name)
+    for field in dataclasses.fields(gtfs):
+        gtfs_data: pandas.DataFrame = gtfs.__getattribute__(field.name)
         if gtfs_data is not None:
-            gtfs_data.to_csv(join(directory, f'{field.name}.txt'), index=False)
+            gtfs_data.to_csv(os.path.join(directory, f'{field.name}.txt'), index=False)
 
 
-def filter_by_column_values(df: DataFrame, col_name: str, accepted_values: List[str]) -> DataFrame:
+def filter_by_column_values(df: pandas.DataFrame, col_name: str, accepted_values: typing.List[str]) -> pandas.DataFrame:
     """
     Filters a dataframe by column such as a SQL 'IN' filtering
 
@@ -161,7 +160,8 @@ def filter_by_column_values(df: DataFrame, col_name: str, accepted_values: List[
     return df[df[col_name].isin(accepted_values)]
 
 
-def filter_by_column_values_optional(df: DataFrame, col_name: str, accepted_values: List[str]) -> DataFrame:
+def filter_by_column_values_optional(df: pandas.DataFrame, col_name: str,
+                                     accepted_values: typing.List[str]) -> pandas.DataFrame:
     """
     Filters a dataframe by an optional column such as a SQL 'IN' filtering
 
@@ -184,7 +184,7 @@ def filter_by_column_values_optional(df: DataFrame, col_name: str, accepted_valu
     return df[df[col_name].isin(accepted_values) | df[col_name].isna()]
 
 
-def get_unique_not_null_column_values(df: DataFrame, col_name: str) -> List[str]:
+def get_unique_not_null_column_values(df: pandas.DataFrame, col_name: str) -> typing.List[str]:
     """
     Retrieves all distinct not-null values from a dataframe column
 
@@ -203,7 +203,7 @@ def get_unique_not_null_column_values(df: DataFrame, col_name: str) -> List[str]
     return df[col_name].dropna().unique().tolist()
 
 
-def filter_by_route_id(gtfs_in: GTFS, route_ids: List[str]) -> GTFS:
+def filter_by_route_id(gtfs_in: GTFS, route_ids: typing.List[str]) -> GTFS:
     """
     Filters all GTFS files by route id
 
@@ -306,7 +306,7 @@ def filter_by_route_id(gtfs_in: GTFS, route_ids: List[str]) -> GTFS:
                 attributions=attributions)
 
 
-def filter_by_trip_id(gtfs_in: GTFS, trip_ids: List[str]) -> GTFS:
+def filter_by_trip_id(gtfs_in: GTFS, trip_ids: typing.List[str]) -> GTFS:
     """
         Filters all GTFS files by trip id
 
@@ -324,12 +324,12 @@ def filter_by_trip_id(gtfs_in: GTFS, trip_ids: List[str]) -> GTFS:
     return filter_by_route_id(gtfs_in, route_ids)
 
 
-class FilterType(StrEnum):
+class FilterType(enum.StrEnum):
     ROUTE_ID = 'route_id'
     TRIP_ID = 'trip_id'
 
 
-def perform_filter(input_gtfs_zip: str, output_gtfs_zip: str, filter_type: FilterType, filter_values: List[str],
+def perform_filter(input_gtfs_zip: str, output_gtfs_zip: str, filter_type: FilterType, filter_values: typing.List[str],
                    overwrite_output_gtfs: bool) -> None:
     """
         Unzip input_gtfs_zip, parse and filter it by route_id or trip_id.
@@ -349,10 +349,10 @@ def perform_filter(input_gtfs_zip: str, output_gtfs_zip: str, filter_type: Filte
             PermissionError when output directory is not writable
             ValueError when filter type is invalid
     """
-    if isfile(output_gtfs_zip) and not overwrite_output_gtfs:
+    if os.path.isfile(output_gtfs_zip) and not overwrite_output_gtfs:
         raise FileExistsError(f"File '{output_gtfs_zip}' already exists.")
     try:
-        ZipFile(input_gtfs_zip).extractall(ZIP_EXTRACT_TMP)
+        zipfile.ZipFile(input_gtfs_zip).extractall(ZIP_EXTRACT_TMP)
         gtfs = parse_gtfs(ZIP_EXTRACT_TMP)
         match filter_type:
             case FilterType.ROUTE_ID:
@@ -362,6 +362,6 @@ def perform_filter(input_gtfs_zip: str, output_gtfs_zip: str, filter_type: Filte
             case _:
                 raise ValueError(f'Invalid filter type {filter_type}.')
         save_gtfs(gtfs, ZIP_EXTRACT_TMP)
-        make_archive(output_gtfs_zip.rstrip('.zip'), 'zip', ZIP_EXTRACT_TMP)
+        shutil.make_archive(output_gtfs_zip.rstrip('.zip'), 'zip', ZIP_EXTRACT_TMP)
     finally:
-        rmtree(ZIP_EXTRACT_TMP, ignore_errors=True)
+        shutil.rmtree(ZIP_EXTRACT_TMP, ignore_errors=True)

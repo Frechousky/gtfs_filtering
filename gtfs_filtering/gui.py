@@ -1,16 +1,16 @@
-from dataclasses import dataclass
-from io import StringIO
-from os.path import join
-from sys import argv
-from typing import List
-from zipfile import ZipFile
+import dataclasses
+import io
+import os
+import sys
+import typing
+import zipfile
 
+import pandas
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QLineEdit, QMainWindow, QPushButton, QWidget,
                              QFileDialog, QFormLayout, QMessageBox, QListWidget, QAbstractItemView)
 
 from gtfs_filtering.core import FilterType, perform_filter
-from pandas import read_csv
 
 APP_NAME = "GTFS Filtering"
 
@@ -38,17 +38,17 @@ WARNING_LABEL = "Avertissement"
 WARNING_NO_FILTER_VALUES_LABEL = "Veuillez sélectionner au moins une valeur à filtrer"
 
 
-@dataclass
+@dataclasses.dataclass
 class MainWindowModel:
     input_gtfs_zip: str = None
     output_gtfs_zip_folder: str = "."
     output_gtfs_zip_filename: str = "output_gtfs.zip"
     filter_type: FilterType = FilterType.ROUTE_ID
-    route_ids_from_input_gtfs: List[str] = None
-    trip_ids_from_input_gtfs: List[str] = None
+    route_ids_from_input_gtfs: typing.List[str] = None
+    trip_ids_from_input_gtfs: typing.List[str] = None
 
     def output_gtfs_zip_fullpath(self):
-        return join(self.output_gtfs_zip_folder, self.output_gtfs_zip_filename)
+        return os.path.join(self.output_gtfs_zip_folder, self.output_gtfs_zip_filename)
 
 
 def open_error_message_box(message: str):
@@ -144,7 +144,7 @@ class MainWindow(QMainWindow):
         self.delete_filter_values_push_button.setDisabled(disable)
         self.start_filtering_push_button.setDisabled(disable)
 
-    def _get_filter_values(self) -> List[str]:
+    def _get_filter_values(self) -> typing.List[str]:
         return [self.filter_values_list.item(i).text() for i in range(self.filter_values_list.count())]
 
     def _get_filter_type(self) -> FilterType:
@@ -155,14 +155,14 @@ class MainWindow(QMainWindow):
 
     def _retrieve_route_ids_and_trip_ids_from_input_gtfs(self):
         try:
-            input_gtfs_zip = ZipFile(self.model.input_gtfs_zip)
+            input_gtfs_zip = zipfile.ZipFile(self.model.input_gtfs_zip)
             routes_bytes = input_gtfs_zip.read("routes.txt")
             trips_bytes = input_gtfs_zip.read("trips.txt")
-            routes_str = StringIO(routes_bytes.decode("UTF-8"))
-            trips_str = StringIO(trips_bytes.decode("UTF-8"))
-            routes = read_csv(routes_str)
-            trips = read_csv(trips_str)
-        except Exception:
+            routes_str = io.StringIO(routes_bytes.decode("UTF-8"))
+            trips_str = io.StringIO(trips_bytes.decode("UTF-8"))
+            routes = pandas.read_csv(routes_str)
+            trips = pandas.read_csv(trips_str)
+        except Exception as e:
             open_error_message_box(ERROR_READING_INPUT_GTFS_LABEL)
         self.model.route_ids_from_input_gtfs = routes['route_id'].tolist()
         self.model.trip_ids_from_input_gtfs = trips['trip_id'].tolist()
@@ -226,7 +226,7 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == '__main__':
-    app = QApplication(argv)
+    app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
     app.exec()

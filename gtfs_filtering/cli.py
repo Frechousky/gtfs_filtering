@@ -1,30 +1,24 @@
 #!/usr/bin/env python3
-from typing import List
+import typing
 
-from click import command, option, argument, Choice, Path, ClickException
+import click
+
 from gtfs_filtering.core import perform_filter, FilterType
 
 
-@command()
-@option('-o', '--overwrite', is_flag=True, default=False,
+@click.command()
+@click.option('-o', '--overwrite', is_flag=True, default=False,
               help='pass it to overwrite output GTFS zip if it exists')
-@option('-t', '--filter-type', type=Choice([f_type.value for f_type in FilterType]),
+@click.option('-t', '--filter-type', type=click.Choice([f_type.value for f_type in FilterType]),
               default=FilterType.ROUTE_ID.value, help='type of filtering')
-@argument('input_gtfs_zip', type=Path(exists=True, dir_okay=False))
-@argument('output_gtfs_zip', type=Path(dir_okay=False))
-@argument('filter_values', nargs=-1, required=True)
-def cli(overwrite: bool, filter_type: str, input_gtfs_zip: str, output_gtfs_zip: str,
-        filter_values: List[str]):
+@click.argument('input_gtfs_zip', type=click.Path(exists=True, dir_okay=False))
+@click.argument('output_gtfs_zip', type=click.Path(dir_okay=False))
+@click.argument('filter_values', nargs=-1, required=True)
+def cli(overwrite: bool, filter_type: str, input_gtfs_zip: str, output_gtfs_zip: str, filter_values: typing.List[str]):
     try:
         perform_filter(input_gtfs_zip, output_gtfs_zip, FilterType(filter_type), filter_values, overwrite)
-    except FileExistsError as e:
-        raise ClickException(str(e))
-    except FileNotFoundError as e:
-        raise ClickException(str(e))
-    except PermissionError as e:
-        raise ClickException(str(e))
-    except ValueError as e:
-        raise ClickException(str(e))
+    except (FileExistsError, FileNotFoundError, PermissionError, ValueError) as e:
+        raise click.ClickException(str(e))
 
 
 if __name__ == '__main__':
