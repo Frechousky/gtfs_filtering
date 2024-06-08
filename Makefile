@@ -1,7 +1,3 @@
-DIST_FOLDER=dist
-TESTS_E2E_FOLDER=tests/e2e
-TESTS_UNIT_FOLDER=tests/unit
-
 # dependencies installation
 install-deps:
 	pipenv sync
@@ -22,22 +18,22 @@ format-fix:
 
 # testing
 e2e: package-cli
-	pipenv run pytest "$(TESTS_E2E_FOLDER)"
+	pipenv run pytest tests/e2e
 unit:
-	pipenv run pytest "$(TESTS_UNIT_FOLDER)"
+	pipenv run pytest tests/unit
 tests: unit e2e
 
 # packaging
-$(DIST_FOLDER)/cli: gtfs_filtering/core.py gtfs_filtering/cli.py
+dist/cli: gtfs_filtering/core.py gtfs_filtering/cli.py
 	@echo "package cli application"
 	pipenv run pyinstaller -F gtfs_filtering/cli.py
 	rm -rf build/ cli.spec
-$(DIST_FOLDER)/gui: gtfs_filtering/core.py gtfs_filtering/gui.py
+dist/gui: gtfs_filtering/core.py gtfs_filtering/gui.py
 	@echo "package gui application"
 	pipenv run pyinstaller -F gtfs_filtering/gui.py
 	rm -rf build/ gui.spec
-package-cli: $(DIST_FOLDER)/cli
-package-gui: $(DIST_FOLDER)/gui
+package-cli: dist/cli
+package-gui: dist/gui
 
 clean:
 	rm -rf dist/ .pytest_cache/ .ruff_cache
