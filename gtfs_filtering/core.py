@@ -9,9 +9,9 @@ import zipfile
 
 import pandas
 
-ZIP_EXTRACT_TMP = os.path.join('/tmp', 'gtfs-utils-zip_extract_tmp')
-
-ZIP_EXTRACT_TMP = join('tmp', 'gtfs-utils-zip_extract_tmp')
+IS_WINDOWS = os.name == 'nt'  # check if user OS is WINDOWS
+ZIP_EXTRACT_TMP = os.path.join('C:\\', 'temp', 'gtfs-utils-zip_extract_tmp') if IS_WINDOWS else os.path.join('/tmp',
+                                                                                                             'gtfs-utils-zip_extract_tmp')
 
 
 @dataclasses.dataclass
