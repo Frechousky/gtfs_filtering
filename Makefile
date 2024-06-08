@@ -44,4 +44,4 @@ package-gui: $(DIST_FOLDER)/gui
 clean:
 	rm -rf dist/ .pytest_cache/ .ruff_cache
 
-.PHONY: install-deps install-all-deps update-deps lint lint-fix format format-check e2e unit tests package-cli package-gui clean
+.PHONY: install-deps install-all-deps update-deps lint lint-fix format format-fix e2e unit tests package-cli package-gui clean
