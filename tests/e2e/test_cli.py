@@ -1,12 +1,63 @@
+import io
 import os
 import subprocess
 import typing
+import zipfile
 
+import pandas as pd
 import pytest
 
+from gtfs_filtering.core import get_unique_not_null_column_values
 from tests.e2e.conftest import ROOT_FOLDER
 
 CLI_PATH = os.path.join(ROOT_FOLDER, 'dist', 'cli')
+
+
+def test_cli__when_filtering_by_route_id__filters_by_route_id(gtfs_nyc: str,
+                                                              output_gtfs: str,
+                                                              route_ids: typing.List[str],
+                                                              validate_gtfs):
+    output = subprocess.run([CLI_PATH, gtfs_nyc, output_gtfs, *route_ids], capture_output=True,
+                            text=True)
+
+    assert output.returncode == 0, 'command is successful'
+    assert os.path.isfile(output_gtfs), 'output_gtfs is created'
+
+    # validate output GTFS
+    validation_output = validate_gtfs(output_gtfs)
+    assert validation_output.returncode == 0, 'output GTFS is valid'
+
+    output_gtfs_zip = zipfile.ZipFile(output_gtfs)
+    routes_bytes = output_gtfs_zip.read("routes.txt")
+    routes_str = io.StringIO(routes_bytes.decode("UTF-8"))
+    routes = pd.read_csv(routes_str)
+    output_route_ids = get_unique_not_null_column_values(routes, 'route_id').sort()
+    expected_route_ids = route_ids.sort()
+    assert output_route_ids == expected_route_ids, 'output GTFS is filtered by route_ids'
+
+
+def test_cli__when_filtering_by_trip_id__filters_by_trip_id(gtfs_nyc: str,
+                                                            output_gtfs: str,
+                                                            trip_ids: typing.List[str],
+                                                            validate_gtfs):
+    output = subprocess.run([CLI_PATH, '--filter-type', 'trip_id', gtfs_nyc, output_gtfs, *trip_ids],
+                            capture_output=True,
+                            text=True)
+
+    assert output.returncode == 0, 'command is successful'
+    assert os.path.isfile(output_gtfs), 'output_gtfs is created'
+
+    # validate output GTFS
+    validation_output = validate_gtfs(output_gtfs)
+    assert validation_output.returncode == 0, 'output GTFS is valid'
+
+    output_gtfs_zip = zipfile.ZipFile(output_gtfs)
+    trips_bytes = output_gtfs_zip.read("trips.txt")
+    trips_str = io.StringIO(trips_bytes.decode("UTF-8"))
+    trips = pd.read_csv(trips_str)
+    output_trip_ids = get_unique_not_null_column_values(trips, 'trip_id').sort()
+    expected_trip_ids = trip_ids.sort()
+    assert output_trip_ids == expected_trip_ids, 'output GTFS is filtered by trip_ids'
 
 
 @pytest.mark.parametrize('args',

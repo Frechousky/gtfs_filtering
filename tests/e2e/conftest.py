@@ -1,4 +1,5 @@
 import os
+import subprocess
 import typing
 
 import pytest
@@ -49,5 +50,20 @@ def route_ids() -> typing.List[str]:
 
 
 @pytest.fixture()
-def route_ids() -> typing.List[str]:
+def trip_ids() -> typing.List[str]:
     return ['AFA23GEN-1038-Sunday-00_000600_1..S03R', 'AFA23GEN-1038-Sunday-00_009200_1..N03R']
+
+
+@pytest.fixture()
+def gtfs_validator_jar() -> str:
+    path = os.path.join(ROOT_FOLDER, 'tests', 'bin', 'gtfs-validator-5.0.1-cli.jar')
+    assert os.path.isfile(path), f'{path} should exist'
+    return path
+
+
+@pytest.fixture()
+def validate_gtfs(gtfs_validator_jar, tmp_path) -> typing.Callable[[str], subprocess.CompletedProcess]:
+    def inner(gtfs_zip_path: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["java", "-jar", gtfs_validator_jar, "-o", tmp_path, "-i", gtfs_zip_path])
+
+    return inner
