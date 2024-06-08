@@ -9,7 +9,7 @@ import zipfile
 
 import pandas
 
-ZIP_EXTRACT_TMP = os.path.join('tmp', 'gtfs-utils-zip_extract_tmp')
+ZIP_EXTRACT_TMP = os.path.join('/tmp', 'gtfs-utils-zip_extract_tmp')
 
 ZIP_EXTRACT_TMP = join('tmp', 'gtfs-utils-zip_extract_tmp')
 
@@ -352,6 +352,7 @@ def perform_filter(input_gtfs_zip: str, output_gtfs_zip: str, filter_type: Filte
     if os.path.isfile(output_gtfs_zip) and not overwrite_output_gtfs:
         raise FileExistsError(f"File '{output_gtfs_zip}' already exists.")
     try:
+        os.makedirs(ZIP_EXTRACT_TMP, exist_ok=True)
         zipfile.ZipFile(input_gtfs_zip).extractall(ZIP_EXTRACT_TMP)
         gtfs = parse_gtfs(ZIP_EXTRACT_TMP)
         match filter_type:
