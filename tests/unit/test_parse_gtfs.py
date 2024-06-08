@@ -25,7 +25,9 @@ def mock_parse_gtfs_file_all_files_present(parse_gtfs_file_return_value: pd.Data
 def build_mock_parse_gtfs_file_missing(parse_gtfs_file_return_value: pd.DataFrame, missing_filename: str):
     def mock_parse_gtfs_file(directory: str, filename: str) -> pd.DataFrame:
         if filename == missing_filename:
-            raise FileNotFoundError()
+            e = FileNotFoundError()
+            e.filename = missing_filename
+            raise e
         return parse_gtfs_file_return_value
 
     return mock_parse_gtfs_file

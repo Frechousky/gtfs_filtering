@@ -7,7 +7,7 @@ import shutil
 import typing
 import zipfile
 
-import pandas
+import pandas as pd
 
 IS_WINDOWS = os.name == 'nt'  # check if user OS is WINDOWS
 ZIP_EXTRACT_TMP = os.path.join('C:\\', 'temp', 'gtfs-utils-zip_extract_tmp') if IS_WINDOWS else os.path.join('/tmp',
@@ -21,29 +21,29 @@ class GTFS:
 
     Each field stores data from a single GTFS file, e.g. 'agency' field stores data from GTFS file 'agency.txt'
     """
-    agency: typing.Optional[pandas.DataFrame] = None
-    stops: typing.Optional[pandas.DataFrame] = None
-    routes: typing.Optional[pandas.DataFrame] = None
-    trips: typing.Optional[pandas.DataFrame] = None
-    stop_times: typing.Optional[pandas.DataFrame] = None  # optional
-    calendar: typing.Optional[pandas.DataFrame] = None  # optional
-    calendar_dates: typing.Optional[pandas.DataFrame] = None  # optional
-    fare_attributes: typing.Optional[pandas.DataFrame] = None  # optional
-    fare_rules: typing.Optional[pandas.DataFrame] = None  # optional
-    fare_media: typing.Optional[pandas.DataFrame] = None  # optional
-    fare_products: typing.Optional[pandas.DataFrame] = None  # optional
-    fare_leg_rules: typing.Optional[pandas.DataFrame] = None  # optional
-    fare_transfer_rules: typing.Optional[pandas.DataFrame] = None  # optional
-    areas: typing.Optional[pandas.DataFrame] = None  # optional
-    stop_areas: typing.Optional[pandas.DataFrame] = None  # optional
-    shapes: typing.Optional[pandas.DataFrame] = None  # optional
-    frequencies: typing.Optional[pandas.DataFrame] = None  # optional
-    transfers: typing.Optional[pandas.DataFrame] = None  # optional
-    pathways: typing.Optional[pandas.DataFrame] = None  # optional
-    levels: typing.Optional[pandas.DataFrame] = None  # optional
-    translations: typing.Optional[pandas.DataFrame] = None  # optional
-    feed_info: typing.Optional[pandas.DataFrame] = None  # optional
-    attributions: typing.Optional[pandas.DataFrame] = None  # optional
+    agency: typing.Optional[pd.DataFrame] = None
+    stops: typing.Optional[pd.DataFrame] = None
+    routes: typing.Optional[pd.DataFrame] = None
+    trips: typing.Optional[pd.DataFrame] = None
+    stop_times: typing.Optional[pd.DataFrame] = None  # optional
+    calendar: typing.Optional[pd.DataFrame] = None  # optional
+    calendar_dates: typing.Optional[pd.DataFrame] = None  # optional
+    fare_attributes: typing.Optional[pd.DataFrame] = None  # optional
+    fare_rules: typing.Optional[pd.DataFrame] = None  # optional
+    fare_media: typing.Optional[pd.DataFrame] = None  # optional
+    fare_products: typing.Optional[pd.DataFrame] = None  # optional
+    fare_leg_rules: typing.Optional[pd.DataFrame] = None  # optional
+    fare_transfer_rules: typing.Optional[pd.DataFrame] = None  # optional
+    areas: typing.Optional[pd.DataFrame] = None  # optional
+    stop_areas: typing.Optional[pd.DataFrame] = None  # optional
+    shapes: typing.Optional[pd.DataFrame] = None  # optional
+    frequencies: typing.Optional[pd.DataFrame] = None  # optional
+    transfers: typing.Optional[pd.DataFrame] = None  # optional
+    pathways: typing.Optional[pd.DataFrame] = None  # optional
+    levels: typing.Optional[pd.DataFrame] = None  # optional
+    translations: typing.Optional[pd.DataFrame] = None  # optional
+    feed_info: typing.Optional[pd.DataFrame] = None  # optional
+    attributions: typing.Optional[pd.DataFrame] = None  # optional
 
 
 OPTIONAL_GTFS_FILES = ['stop_times.txt', 'calendar.txt', 'calendar_dates.txt', 'fare_attributes.txt', 'fare_rules.txt',
@@ -52,7 +52,7 @@ OPTIONAL_GTFS_FILES = ['stop_times.txt', 'calendar.txt', 'calendar_dates.txt', '
                        'levels.txt', 'translations.txt', 'feed_info.txt', 'attributions.txt', ]
 
 
-def parse_gtfs_file(directory: str, filename: str) -> pandas.DataFrame:
+def parse_gtfs_file(directory: str, filename: str) -> pd.DataFrame:
     """
     Parses a single GTFS file from a directory
 
@@ -68,10 +68,14 @@ def parse_gtfs_file(directory: str, filename: str) -> pandas.DataFrame:
     Raises:
         FileNotFoundError when directory does not exist
         FileNotFoundError when filename does not exist
-        pd.errors.pandas.errors.EmptyDataError when file content is empty
+        pd.errors.EmptyDataError when file content is empty
     """
-    with open(os.path.join(directory, filename), 'r') as gtfs_entity_txt:
-        return pandas.read_csv(gtfs_entity_txt, dtype=str)
+    with open(os.path.join(directory, filename), 'r') as gtfs_file_txt:
+        try:
+            return pd.read_csv(gtfs_file_txt, dtype=str)
+        except pd.errors.EmptyDataError as e:
+            error_msg = f"{str(e)} '{filename}'."
+            raise pd.errors.EmptyDataError(error_msg)
 
 
 def parse_gtfs(directory: str) -> GTFS:
@@ -98,7 +102,7 @@ def parse_gtfs(directory: str) -> GTFS:
         routes = parse_gtfs_file(directory, 'routes.txt')
         trips = parse_gtfs_file(directory, 'trips.txt')
     except FileNotFoundError as e:
-        raise FileNotFoundError(f'GTFS is invalid: file {e.filename} is missing')
+        raise FileNotFoundError(f"GTFS is invalid: file '{os.path.basename(e.filename)}' is missing.")
     gtfs = GTFS(agency=agency, stops=stops, routes=routes, trips=trips)
     # load optional files
     for gtfs_file in OPTIONAL_GTFS_FILES:
@@ -109,7 +113,7 @@ def parse_gtfs(directory: str) -> GTFS:
         except FileNotFoundError:
             # optional files may be missing
             pass
-        except pandas.errors.EmptyDataError:
+        except pd.errors.EmptyDataError:
             logging.warning(f'File {gtfs_file} is present but empty, ignores it')
 
     return gtfs
@@ -134,12 +138,12 @@ def save_gtfs(gtfs: GTFS, directory: str) -> None:
         PermissionError when directory is not writable
     """
     for field in dataclasses.fields(gtfs):
-        gtfs_data: pandas.DataFrame = gtfs.__getattribute__(field.name)
+        gtfs_data: pd.DataFrame = gtfs.__getattribute__(field.name)
         if gtfs_data is not None:
             gtfs_data.to_csv(os.path.join(directory, f'{field.name}.txt'), index=False)
 
 
-def filter_by_column_values(df: pandas.DataFrame, col_name: str, accepted_values: typing.List[str]) -> pandas.DataFrame:
+def filter_by_column_values(df: pd.DataFrame, col_name: str, accepted_values: typing.List[str]) -> pd.DataFrame:
     """
     Filters a dataframe by column such as a SQL 'IN' filtering
 
@@ -160,8 +164,8 @@ def filter_by_column_values(df: pandas.DataFrame, col_name: str, accepted_values
     return df[df[col_name].isin(accepted_values)]
 
 
-def filter_by_column_values_optional(df: pandas.DataFrame, col_name: str,
-                                     accepted_values: typing.List[str]) -> pandas.DataFrame:
+def filter_by_column_values_optional(df: pd.DataFrame, col_name: str,
+                                     accepted_values: typing.List[str]) -> pd.DataFrame:
     """
     Filters a dataframe by an optional column such as a SQL 'IN' filtering
 
@@ -184,7 +188,7 @@ def filter_by_column_values_optional(df: pandas.DataFrame, col_name: str,
     return df[df[col_name].isin(accepted_values) | df[col_name].isna()]
 
 
-def get_unique_not_null_column_values(df: pandas.DataFrame, col_name: str) -> typing.List[str]:
+def get_unique_not_null_column_values(df: pd.DataFrame, col_name: str) -> typing.List[str]:
     """
     Retrieves all distinct not-null values from a dataframe column
 

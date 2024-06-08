@@ -69,3 +69,21 @@ def test_cli__when_output_gtfs_zip_exists_and_overwrite_flag_set__is_successful(
 
     assert output.returncode == 0, 'command is successful'
     assert os.path.getmtime(existing_output_gtfs) > mtime_before, 'output gtfs should be overwritten'
+
+
+def test_cli__when_required_file_is_missing_in_input_gtfs_zip__fails_and_displays_error_message(
+        gtfs_missing_routes_txt: str, output_gtfs: str, route_ids: typing.List[str]):
+    output = subprocess.run([CLI_PATH, gtfs_missing_routes_txt, output_gtfs, *route_ids], capture_output=True,
+                            text=True)
+
+    assert output.returncode == 1, 'command should fail'
+    assert "Error: GTFS is invalid: file 'routes.txt' is missing." in output.stderr, 'command should display error message to user'
+
+
+def test_cli__when_required_file_is_empty_in_input_gtfs_zip__fails_and_displays_error_message(
+        gtfs_empty_routes_txt: str, output_gtfs: str, route_ids: typing.List[str]):
+    output = subprocess.run([CLI_PATH, gtfs_empty_routes_txt, output_gtfs, *route_ids], capture_output=True,
+                            text=True)
+
+    assert output.returncode == 1, 'command should fail'
+    assert "Error: No columns to parse from file 'routes.txt'." in output.stderr, 'command should display error message to user'

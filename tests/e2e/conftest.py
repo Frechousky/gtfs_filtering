@@ -8,20 +8,39 @@ ROOT_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'
 
 @pytest.fixture()
 def gtfs_nyc() -> str:
-    return os.path.join(ROOT_FOLDER, 'tests', 'data', 'gtfs_nyc.zip')
+    path = os.path.join(ROOT_FOLDER, 'tests', 'data', 'gtfs_nyc.zip')
+    assert os.path.isfile(path), f'{path} should exist'
+    return path
+
+
+@pytest.fixture()
+def gtfs_missing_routes_txt() -> str:
+    path = os.path.join(ROOT_FOLDER, 'tests', 'data', 'gtfs_missing_routes_txt.zip')
+    assert os.path.isfile(path), f'{path} should exist'
+    return path
+
+
+@pytest.fixture()
+def gtfs_empty_routes_txt() -> str:
+    path = os.path.join(ROOT_FOLDER, 'tests', 'data', 'gtfs_empty_routes_txt.zip')
+    assert os.path.isfile(path), f'{path} should exist'
+    return path
 
 
 @pytest.fixture()
 def existing_output_gtfs(tmp_path) -> str:
-    filepath = os.path.join(tmp_path, 'output_gtfs.zip')
-    with open(filepath, 'w') as f:
-        f.write('')     # empty zip file, just to test existence
-    return filepath
+    path = os.path.join(tmp_path, 'output_gtfs.zip')
+    with open(path, 'w') as f:
+        f.write('')  # empty zip file, just to test existence
+    assert os.path.isfile(path), f'{path} should exist'
+    return path
 
 
 @pytest.fixture()
 def output_gtfs(tmp_path) -> str:
-    return os.path.join(tmp_path, 'output_gtfs.zip')
+    path = os.path.join(tmp_path, 'output_gtfs.zip')
+    assert not os.path.isfile(path), f'{path} should not exist'
+    return path
 
 
 @pytest.fixture()
