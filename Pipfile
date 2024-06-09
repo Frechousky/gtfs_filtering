@@ -4,9 +4,9 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+click = "8.*"
 pandas = "2.*"
 PyQt6 = "6.*"
-click = "8.*"
 
 [dev-packages]
 pyinstaller = "6.*"
@@ -15,4 +15,3 @@ ruff = "0.*"
 
 [requires]
 python_version = "3.11"
-python_full_version = "3.11.0"
