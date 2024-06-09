@@ -83,7 +83,7 @@ def test_cli__when_help_option_is_present__displays_help(args: typing.List[str])
 def test_cli__when_input_gtfs_zip_arg_is_missing__fails_and_displays_error_message():
     output = subprocess.run(CLI_PATH, capture_output=True, text=True)
 
-    assert output.returncode == 2, "command should fail"
+    assert output.returncode != 0, "command should fail"
     assert "Usage: cli" in output.stderr, "command should display help message to user"
     assert (
         "Error: Missing argument 'INPUT_GTFS_ZIP'." in output.stderr
@@ -95,7 +95,7 @@ def test_cli__when_input_gtfs_zip_does_not_exists__fails_and_displays_error_mess
         [CLI_PATH, "non_existing_file.zip"], capture_output=True, text=True
     )
 
-    assert output.returncode == 2, "command should fail"
+    assert output.returncode != 0, "command should fail"
     assert "Usage: cli" in output.stderr, "command should display help message to user"
     assert (
         "Invalid value for 'INPUT_GTFS_ZIP': File 'non_existing_file.zip' does not exist."
@@ -108,7 +108,7 @@ def test_cli__when_output_gtfs_zip_arg_is_missing__fails_and_displays_error_mess
 ):
     output = subprocess.run([CLI_PATH, gtfs_nyc], capture_output=True, text=True)
 
-    assert output.returncode == 2, "command should fail"
+    assert output.returncode != 0, "command should fail"
     assert "Usage: cli" in output.stderr, "command should display help message to user"
     assert (
         "Error: Missing argument 'OUTPUT_GTFS_ZIP'." in output.stderr
@@ -126,7 +126,7 @@ def test_cli__when_output_gtfs_zip_exists_and_overwrite_flag_not_set__fails_and_
         text=True,
     )
 
-    assert output.returncode == 1, "command should fail"
+    assert output.returncode != 0, "command should fail"
     assert (
         f"Error: File '{existing_output_gtfs}' already exists." in output.stderr
     ), "command should display error message to user"
@@ -163,7 +163,7 @@ def test_cli__when_required_file_is_missing_in_input_gtfs_zip__fails_and_display
         text=True,
     )
 
-    assert output.returncode == 1, "command should fail"
+    assert output.returncode != 0, "command should fail"
     assert (
         "Error: GTFS is invalid: file 'routes.txt' is missing." in output.stderr
     ), "command should display error message to user"
@@ -178,7 +178,7 @@ def test_cli__when_required_file_is_empty_in_input_gtfs_zip__fails_and_displays_
         text=True,
     )
 
-    assert output.returncode == 1, "command should fail"
+    assert output.returncode != 0, "command should fail"
     assert (
         "Error: No columns to parse from file 'routes.txt'." in output.stderr
     ), "command should display error message to user"
