@@ -26,7 +26,7 @@ jobs:
         run: make format-check
 
       - name: Dependency vulnerability check
-        run: make dependency-check
+        run: make check-deps
 
       - name: Run unit tests
         run: make unit
