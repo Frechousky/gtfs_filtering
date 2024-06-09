@@ -38,7 +38,7 @@ def build_mock_parse_gtfs_file_missing(
 
 
 def test_parse_gtfs__when_all_files_present__returns_gtfs_object(
-    mock_parse_gtfs_file_all_files_present
+    mock_parse_gtfs_file_all_files_present,
 ):
     gtfs = parse_gtfs("gtfs")
 

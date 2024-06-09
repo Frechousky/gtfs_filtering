@@ -66,7 +66,7 @@ def test_filter_by_route_id__filters_correctly(sample_gtfs):
 
 
 def test_filter_by_route_id__when_no_matching_route_ids__returns_empty_gtfs(
-    sample_gtfs
+    sample_gtfs,
 ):
     filtered_gtfs = filter_by_route_id(sample_gtfs, ["R4"])
 
@@ -80,7 +80,7 @@ def test_filter_by_route_id__when_no_matching_route_ids__returns_empty_gtfs(
 
 
 def test_filter_by_route_id__multiple_matching_route_ids__filters_correctly(
-    sample_gtfs
+    sample_gtfs,
 ):
     # With multiple matching route_ids
     filtered_gtfs = filter_by_route_id(sample_gtfs, ["R1", "R2"])

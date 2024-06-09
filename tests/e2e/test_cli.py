@@ -104,7 +104,7 @@ def test_cli__when_input_gtfs_zip_does_not_exists__fails_and_displays_error_mess
 
 
 def test_cli__when_output_gtfs_zip_arg_is_missing__fails_and_displays_error_message(
-    gtfs_nyc: str
+    gtfs_nyc: str,
 ):
     output = subprocess.run([CLI_PATH, gtfs_nyc], capture_output=True, text=True)
 
