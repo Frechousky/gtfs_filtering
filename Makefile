@@ -7,13 +7,13 @@ update-deps:
 	pipenv update
 
 # linting & formatting
-lint:
+lint-check:
 	pipenv run ruff check .
-lint-fix:
+lint:
 	pipenv run ruff check . --fix
-format:
+format-check:
 	pipenv run ruff format --check .
-format-fix:
+format:
 	pipenv run ruff format .
 
 # testing
@@ -38,4 +38,4 @@ package-gui: dist/gui
 clean:
 	rm -rf dist/ .pytest_cache/ .ruff_cache
 
-.PHONY: install-deps install-all-deps update-deps lint lint-fix format format-fix e2e unit tests package-cli package-gui clean
+.PHONY: install-deps install-all-deps update-deps lint-check lint format-check format e2e unit tests package-cli package-gui clean
