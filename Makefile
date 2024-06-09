@@ -5,6 +5,8 @@ install-all-deps:
 	pipenv sync -d
 update-deps:
 	pipenv update
+check-deps:
+	pipenv check # check dependencies for vulnerabilities
 
 # linting & formatting
 lint-check:
