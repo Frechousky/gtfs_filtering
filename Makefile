@@ -1,4 +1,4 @@
-# dependencies installation
+# dependencies
 install-deps:
 	pipenv sync
 install-all-deps:
@@ -23,7 +23,7 @@ e2e: package-cli
 	pipenv run pytest tests/e2e
 unit:
 	pipenv run pytest tests/unit
-tests: unit e2e
+tests: e2e unit
 
 # packaging
 dist/cli: gtfs_filtering/core.py gtfs_filtering/cli.py
@@ -40,4 +40,4 @@ package-gui: dist/gui
 clean:
 	rm -rf dist/ .pytest_cache/ .ruff_cache
 
-.PHONY: install-deps install-all-deps update-deps lint-check lint format-check format e2e unit tests package-cli package-gui clean
+.PHONY: install-deps install-all-deps update-deps check-deps lint-check lint format-check format e2e unit tests package-cli package-gui clean
