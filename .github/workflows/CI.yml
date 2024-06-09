@@ -1,0 +1,35 @@
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pipenv'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipenv
+          make install-all-deps
+
+      - name: Lint checking
+        run: make lint-check
+
+      - name: Format checking
+        run: make format-check
+
+      - name: Dependency vulnerability check
+        run: make dependency-check
+
+      - name: Run unit tests
+        run: make unit
+
+      - name: Run end to end tests
+        run: make e2e
