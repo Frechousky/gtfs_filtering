@@ -164,7 +164,7 @@ class MainWindow(QMainWindow):
         )
         main_layout.addRow(FILTER_TYPE_LABEL, self.filter_type_select)
         main_layout.addRow(FILTER_VALUES_LABEL, self.filter_values_list)
-        main_layout.addRow(self.delete_filter_values_push_button)
+        main_layout.addWidget(self.delete_filter_values_push_button)
         main_layout.addWidget(self.start_filtering_push_button)
 
         # Add main_layout to main_widget
