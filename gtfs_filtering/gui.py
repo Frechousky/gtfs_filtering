@@ -35,7 +35,7 @@ _SUPPORTED_LOCALES = {"fr", "en"}
 
 i18n.set("file_format", "yaml")
 i18n.load_path.append(str(_LOCALES_DIR))
-i18n.set('filename_format', '{locale}.{format}')
+i18n.set("filename_format", "{locale}.{format}")
 i18n.set("fallback", "en")
 
 
