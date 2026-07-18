@@ -43,12 +43,12 @@ def test_parse_gtfs__when_all_files_present__returns_gtfs_object(
     gtfs = parse_gtfs("gtfs")
 
     for field in dataclasses.fields(gtfs):
-        assert (
-            gtfs.__getattribute__(field.name) is not None
-        ), f"field {field.name} should not be None"
-        assert isinstance(
-            gtfs.__getattribute__(field.name), pd.DataFrame
-        ), f"field {field.name} should be a DataFrame"
+        assert gtfs.__getattribute__(field.name) is not None, (
+            f"field {field.name} should not be None"
+        )
+        assert isinstance(gtfs.__getattribute__(field.name), pd.DataFrame), (
+            f"field {field.name} should be a DataFrame"
+        )
 
 
 @pytest.mark.parametrize(
@@ -88,13 +88,13 @@ def test_parse_gtfs__when_missing_optional_file__returns_gtfs_object(
     for field in dataclasses.fields(gtfs):
         if field.name == missing_filename.rstrip(".txt"):
             # missing file is None
-            assert (
-                gtfs.__getattribute__(field.name) is None
-            ), f"field {field.name} should be None"
+            assert gtfs.__getattribute__(field.name) is None, (
+                f"field {field.name} should be None"
+            )
         else:
-            assert (
-                gtfs.__getattribute__(field.name) is not None
-            ), f"field {field.name} should not be None"
-            assert isinstance(
-                gtfs.__getattribute__(field.name), pd.DataFrame
-            ), f"field {field.name} should be a DataFrame"
+            assert gtfs.__getattribute__(field.name) is not None, (
+                f"field {field.name} should not be None"
+            )
+            assert isinstance(gtfs.__getattribute__(field.name), pd.DataFrame), (
+                f"field {field.name} should be a DataFrame"
+            )

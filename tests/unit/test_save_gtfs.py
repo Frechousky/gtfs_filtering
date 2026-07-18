@@ -25,9 +25,9 @@ def test_save_gtfs__when_all_files_are_present__all_files_are_saved(
     assert os.path.isfile(os.path.join(tmp_path, "stops.txt")), "file should be saved"
     assert os.path.isfile(os.path.join(tmp_path, "routes.txt")), "file should be saved"
     assert os.path.isfile(os.path.join(tmp_path, "trips.txt")), "file should be saved"
-    assert os.path.isfile(
-        os.path.join(tmp_path, "stop_times.txt")
-    ), "file should be saved"
+    assert os.path.isfile(os.path.join(tmp_path, "stop_times.txt")), (
+        "file should be saved"
+    )
 
 
 def test_save_gtfs__when_all_files_are_present__content_is_correct(gtfs_data, tmp_path):
@@ -60,12 +60,12 @@ def test_save_gtfs__when_some_files_none__only_non_none_files_saved(tmp_path):
     assert os.path.isfile(os.path.join(tmp_path, "stops.txt")), "file should be saved"
     assert os.path.isfile(os.path.join(tmp_path, "trips.txt")), "file should be saved"
 
-    assert not os.path.isfile(
-        os.path.join(tmp_path, "routes.txt")
-    ), "file should not be saved"
-    assert not os.path.isfile(
-        os.path.join(tmp_path, "stop_times.txt")
-    ), "file should not be saved"
+    assert not os.path.isfile(os.path.join(tmp_path, "routes.txt")), (
+        "file should not be saved"
+    )
+    assert not os.path.isfile(os.path.join(tmp_path, "stop_times.txt")), (
+        "file should not be saved"
+    )
 
 
 def test_save_gtfs__when_all_files_none__no_files_saved(tmp_path):
@@ -73,18 +73,18 @@ def test_save_gtfs__when_all_files_none__no_files_saved(tmp_path):
 
     save_gtfs(gtfs_data, tmp_path)
 
-    assert not os.path.isfile(
-        os.path.join(tmp_path, "stops.txt")
-    ), "file should not be saved"
-    assert not os.path.isfile(
-        os.path.join(tmp_path, "routes.txt")
-    ), "file should not be saved"
-    assert not os.path.isfile(
-        os.path.join(tmp_path, "trips.txt")
-    ), "file should not be saved"
-    assert not os.path.isfile(
-        os.path.join(tmp_path, "stop_times.txt")
-    ), "file should not be saved"
+    assert not os.path.isfile(os.path.join(tmp_path, "stops.txt")), (
+        "file should not be saved"
+    )
+    assert not os.path.isfile(os.path.join(tmp_path, "routes.txt")), (
+        "file should not be saved"
+    )
+    assert not os.path.isfile(os.path.join(tmp_path, "trips.txt")), (
+        "file should not be saved"
+    )
+    assert not os.path.isfile(os.path.join(tmp_path, "stop_times.txt")), (
+        "file should not be saved"
+    )
 
 
 def test_save_gtfs__when_directory_does_not_exist__raises_os_error(gtfs_data):

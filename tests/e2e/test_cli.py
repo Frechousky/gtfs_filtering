@@ -33,9 +33,9 @@ def test_cli__when_filtering_by_route_id__filters_by_route_id(
     routes = pd.read_csv(routes_str)
     output_route_ids = get_unique_not_null_column_values(routes, "route_id").sort()
     expected_route_ids = route_ids.sort()
-    assert (
-        output_route_ids == expected_route_ids
-    ), "output GTFS is filtered by route_ids"
+    assert output_route_ids == expected_route_ids, (
+        "output GTFS is filtered by route_ids"
+    )
 
 
 def test_cli__when_filtering_by_trip_id__filters_by_trip_id(
@@ -85,9 +85,9 @@ def test_cli__when_input_gtfs_zip_arg_is_missing__fails_and_displays_error_messa
 
     assert output.returncode != 0, "command should fail"
     assert "Usage: cli" in output.stderr, "command should display help message to user"
-    assert (
-        "Error: Missing argument 'INPUT_GTFS_ZIP'." in output.stderr
-    ), "command should display error message to user"
+    assert "Error: Missing argument 'INPUT_GTFS_ZIP'." in output.stderr, (
+        "command should display error message to user"
+    )
 
 
 def test_cli__when_input_gtfs_zip_does_not_exists__fails_and_displays_error_message():
@@ -110,9 +110,9 @@ def test_cli__when_output_gtfs_zip_arg_is_missing__fails_and_displays_error_mess
 
     assert output.returncode != 0, "command should fail"
     assert "Usage: cli" in output.stderr, "command should display help message to user"
-    assert (
-        "Error: Missing argument 'OUTPUT_GTFS_ZIP'." in output.stderr
-    ), "command should display error message to user"
+    assert "Error: Missing argument 'OUTPUT_GTFS_ZIP'." in output.stderr, (
+        "command should display error message to user"
+    )
 
 
 def test_cli__when_output_gtfs_zip_exists_and_overwrite_flag_not_set__fails_and_displays_error_message(
@@ -127,9 +127,9 @@ def test_cli__when_output_gtfs_zip_exists_and_overwrite_flag_not_set__fails_and_
     )
 
     assert output.returncode != 0, "command should fail"
-    assert (
-        f"Error: File '{existing_output_gtfs}' already exists." in output.stderr
-    ), "command should display error message to user"
+    assert f"Error: File '{existing_output_gtfs}' already exists." in output.stderr, (
+        "command should display error message to user"
+    )
 
 
 @pytest.mark.parametrize("overwrite_opt", ["-o", "--overwrite"])
@@ -149,9 +149,9 @@ def test_cli__when_output_gtfs_zip_exists_and_overwrite_flag_set__is_successful(
     )
 
     assert output.returncode == 0, "command is successful"
-    assert (
-        os.path.getmtime(existing_output_gtfs) > mtime_before
-    ), "output gtfs should be overwritten"
+    assert os.path.getmtime(existing_output_gtfs) > mtime_before, (
+        "output gtfs should be overwritten"
+    )
 
 
 def test_cli__when_required_file_is_missing_in_input_gtfs_zip__fails_and_displays_error_message(
@@ -164,9 +164,9 @@ def test_cli__when_required_file_is_missing_in_input_gtfs_zip__fails_and_display
     )
 
     assert output.returncode != 0, "command should fail"
-    assert (
-        "Error: GTFS is invalid: file 'routes.txt' is missing." in output.stderr
-    ), "command should display error message to user"
+    assert "Error: GTFS is invalid: file 'routes.txt' is missing." in output.stderr, (
+        "command should display error message to user"
+    )
 
 
 def test_cli__when_required_file_is_empty_in_input_gtfs_zip__fails_and_displays_error_message(
@@ -179,6 +179,6 @@ def test_cli__when_required_file_is_empty_in_input_gtfs_zip__fails_and_displays_
     )
 
     assert output.returncode != 0, "command should fail"
-    assert (
-        "Error: No columns to parse from file 'routes.txt'." in output.stderr
-    ), "command should display error message to user"
+    assert "Error: No columns to parse from file 'routes.txt'." in output.stderr, (
+        "command should display error message to user"
+    )

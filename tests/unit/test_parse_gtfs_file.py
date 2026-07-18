@@ -27,9 +27,9 @@ def test_parse_gtfs_file__when_directory_does_not_exist__raises_file_not_found_e
 def test_parse_gtfs_file__when_file_does_not_exist__raises_file_not_found_error(
     tmp_path, not_existing_file
 ):
-    assert not os.path.exists(
-        os.path.join(tmp_path, NOT_EXISTING_FILE)
-    ), "file should not exist"
+    assert not os.path.exists(os.path.join(tmp_path, NOT_EXISTING_FILE)), (
+        "file should not exist"
+    )
 
     with pytest.raises(FileNotFoundError):
         parse_gtfs_file(tmp_path, NOT_EXISTING_FILE)

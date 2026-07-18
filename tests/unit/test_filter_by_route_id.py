@@ -60,9 +60,9 @@ def test_filter_by_route_id__filters_correctly(sample_gtfs):
     assert filtered_gtfs.calendar.equals(
         pd.DataFrame({"service_id": ["S1"], "monday": [1], "tuesday": [1]}, dtype=str)
     ), "calendar should be equal"
-    assert filtered_gtfs.calendar_dates.equals(
-        sample_gtfs.calendar_dates
-    ), "calendar_dates should be equal"
+    assert filtered_gtfs.calendar_dates.equals(sample_gtfs.calendar_dates), (
+        "calendar_dates should be equal"
+    )
 
 
 def test_filter_by_route_id__when_no_matching_route_ids__returns_empty_gtfs(
@@ -121,9 +121,9 @@ def test_filter_by_route_id__multiple_matching_route_ids__filters_correctly(
             {"service_id": ["S1", "S2"], "monday": [1, 0], "tuesday": [1, 0]}, dtype=str
         )
     ), "calendar should be equal"
-    assert filtered_gtfs.calendar_dates.equals(
-        sample_gtfs.calendar_dates
-    ), "calendar_dates should be equal"
+    assert filtered_gtfs.calendar_dates.equals(sample_gtfs.calendar_dates), (
+        "calendar_dates should be equal"
+    )
 
 
 def test_filter_by_route_id__empty_route_ids__returns_empty_gtfs(sample_gtfs):
@@ -144,9 +144,9 @@ def test_filter_by_route_id__no_calendar__handles_correctly(sample_gtfs):
     sample_gtfs_no_calendar.calendar = None
 
     filtered_gtfs_no_calendar = filter_by_route_id(sample_gtfs_no_calendar, ["R1"])
-    assert filtered_gtfs_no_calendar.agency.equals(
-        sample_gtfs_no_calendar.agency
-    ), "agency should be equal"
+    assert filtered_gtfs_no_calendar.agency.equals(sample_gtfs_no_calendar.agency), (
+        "agency should be equal"
+    )
     assert filtered_gtfs_no_calendar.stops.equals(
         pd.DataFrame(
             {"stop_id": ["S1"], "stop_name": ["Stop 1"], "parent_station": [None]}
@@ -188,6 +188,6 @@ def test_filter_by_route_id__no_calendar_dates__handles_correctly(sample_gtfs):
     assert filtered_gtfs_no_calendar_dates.calendar.equals(
         filtered_gtfs_no_calendar_dates.calendar
     ), "calendar_dates should be equal"
-    assert (
-        filtered_gtfs_no_calendar_dates.calendar_dates is None
-    ), "calendar_dates should be none"
+    assert filtered_gtfs_no_calendar_dates.calendar_dates is None, (
+        "calendar_dates should be none"
+    )
