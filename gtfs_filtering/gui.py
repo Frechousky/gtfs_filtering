@@ -1,11 +1,11 @@
 import dataclasses
-import io
 import os
 import sys
+import tempfile
 import typing
 import zipfile
 
-import pandas
+import duckdb
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QApplication,
@@ -197,21 +197,35 @@ class MainWindow(QMainWindow):
         )
 
     def _retrieve_route_ids_and_trip_ids_from_input_gtfs(self):
+        routes_tmp = None
+        trips_tmp = None
         try:
             input_gtfs_zip = zipfile.ZipFile(self.model.input_gtfs_zip)
             routes_bytes = input_gtfs_zip.read("routes.txt")
             trips_bytes = input_gtfs_zip.read("trips.txt")
-            routes_str = io.StringIO(routes_bytes.decode("UTF-8"))
-            trips_str = io.StringIO(trips_bytes.decode("UTF-8"))
-            routes = pandas.read_csv(routes_str)
-            trips = pandas.read_csv(trips_str)
+            with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as f:
+                f.write(routes_bytes)
+                routes_tmp = f.name
+            with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as f:
+                f.write(trips_bytes)
+                trips_tmp = f.name
+            routes = duckdb.read_csv(routes_tmp, all_varchar=True)
+            trips = duckdb.read_csv(trips_tmp, all_varchar=True)
+            self.model.route_ids_from_input_gtfs = [
+                row[0] for row in routes.select('"route_id"').fetchall()
+            ]
+            self.model.trip_ids_from_input_gtfs = [
+                row[0] for row in trips.select('"trip_id"').fetchall()
+            ]
+            self.model.route_ids_from_input_gtfs.sort()
+            self.model.trip_ids_from_input_gtfs.sort()
         except Exception:
             open_error_message_box(ERROR_READING_INPUT_GTFS_LABEL)
-        self.model.route_ids_from_input_gtfs = routes["route_id"].tolist()
-        self.model.trip_ids_from_input_gtfs = trips["trip_id"].tolist()
-        self.model.route_ids_from_input_gtfs.sort()
-        self.model.trip_ids_from_input_gtfs.sort()
-        pass
+        finally:
+            if routes_tmp and os.path.exists(routes_tmp):
+                os.unlink(routes_tmp)
+            if trips_tmp and os.path.exists(trips_tmp):
+                os.unlink(trips_tmp)
 
     def _update_filter_values(self):
         self.filter_values_list.clear()

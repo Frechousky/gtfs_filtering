@@ -4,8 +4,10 @@ version = "0.1.0"
 requires-python = "==3.11.*"
 dependencies = [
     "click>=8,<9",
-    "pandas>=2,<3",
+    "duckdb>=1,<2",
+    "fsspec>=2026.6.0",
     "PyQt6>=6,<7",
+    "pytest>=8.4.2",
 ]
 
 [dependency-groups]

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import csv
 import dataclasses
 import enum
 import logging
@@ -7,7 +8,7 @@ import shutil
 import typing
 import zipfile
 
-import pandas as pd
+import duckdb
 
 IS_WINDOWS = os.name == "nt"  # check if user OS is WINDOWS
 ZIP_EXTRACT_TMP = (
@@ -15,6 +16,10 @@ ZIP_EXTRACT_TMP = (
     if IS_WINDOWS
     else os.path.join("/tmp", "gtfs-utils-zip_extract_tmp")
 )
+
+
+class EmptyDataError(ValueError):
+    pass
 
 
 @dataclasses.dataclass
@@ -25,29 +30,29 @@ class GTFS:
     Each field stores data from a single GTFS file, e.g. 'agency' field stores data from GTFS file 'agency.txt'
     """
 
-    agency: typing.Optional[pd.DataFrame] = None
-    stops: typing.Optional[pd.DataFrame] = None
-    routes: typing.Optional[pd.DataFrame] = None
-    trips: typing.Optional[pd.DataFrame] = None
-    stop_times: typing.Optional[pd.DataFrame] = None  # optional
-    calendar: typing.Optional[pd.DataFrame] = None  # optional
-    calendar_dates: typing.Optional[pd.DataFrame] = None  # optional
-    fare_attributes: typing.Optional[pd.DataFrame] = None  # optional
-    fare_rules: typing.Optional[pd.DataFrame] = None  # optional
-    fare_media: typing.Optional[pd.DataFrame] = None  # optional
-    fare_products: typing.Optional[pd.DataFrame] = None  # optional
-    fare_leg_rules: typing.Optional[pd.DataFrame] = None  # optional
-    fare_transfer_rules: typing.Optional[pd.DataFrame] = None  # optional
-    areas: typing.Optional[pd.DataFrame] = None  # optional
-    stop_areas: typing.Optional[pd.DataFrame] = None  # optional
-    shapes: typing.Optional[pd.DataFrame] = None  # optional
-    frequencies: typing.Optional[pd.DataFrame] = None  # optional
-    transfers: typing.Optional[pd.DataFrame] = None  # optional
-    pathways: typing.Optional[pd.DataFrame] = None  # optional
-    levels: typing.Optional[pd.DataFrame] = None  # optional
-    translations: typing.Optional[pd.DataFrame] = None  # optional
-    feed_info: typing.Optional[pd.DataFrame] = None  # optional
-    attributions: typing.Optional[pd.DataFrame] = None  # optional
+    agency: typing.Optional[duckdb.DuckDBPyRelation] = None
+    stops: typing.Optional[duckdb.DuckDBPyRelation] = None
+    routes: typing.Optional[duckdb.DuckDBPyRelation] = None
+    trips: typing.Optional[duckdb.DuckDBPyRelation] = None
+    stop_times: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    calendar: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    calendar_dates: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    fare_attributes: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    fare_rules: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    fare_media: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    fare_products: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    fare_leg_rules: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    fare_transfer_rules: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    areas: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    stop_areas: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    shapes: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    frequencies: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    transfers: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    pathways: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    levels: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    translations: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    feed_info: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    attributions: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
 
 
 OPTIONAL_GTFS_FILES = [
@@ -73,7 +78,7 @@ OPTIONAL_GTFS_FILES = [
 ]
 
 
-def parse_gtfs_file(directory: str, filename: str) -> pd.DataFrame:
+def parse_gtfs_file(directory: str, filename: str) -> duckdb.DuckDBPyRelation:
     """
     Parses a single GTFS file from a directory
 
@@ -89,14 +94,14 @@ def parse_gtfs_file(directory: str, filename: str) -> pd.DataFrame:
     Raises:
         FileNotFoundError when directory does not exist
         FileNotFoundError when filename does not exist
-        pd.errors.EmptyDataError when file content is empty
+        EmptyDataError when file content is empty
     """
-    with open(os.path.join(directory, filename), "r") as gtfs_file_txt:
-        try:
-            return pd.read_csv(gtfs_file_txt, dtype=str)
-        except pd.errors.EmptyDataError as e:
-            error_msg = f"{str(e)} '{filename}'."
-            raise pd.errors.EmptyDataError(error_msg)
+    filepath = os.path.join(directory, filename)
+    with open(filepath, "r") as f:
+        first_char = f.read(1)
+    if not first_char:
+        raise EmptyDataError(f"No columns to parse from file '{filename}'.")
+    return duckdb.read_csv(filepath, all_varchar=True)
 
 
 def parse_gtfs(directory: str) -> GTFS:
@@ -136,7 +141,7 @@ def parse_gtfs(directory: str) -> GTFS:
         except FileNotFoundError:
             # optional files may be missing
             pass
-        except pd.errors.EmptyDataError:
+        except EmptyDataError:
             logging.warning(f"File {gtfs_file} is present but empty, ignores it")
 
     return gtfs
@@ -161,78 +166,95 @@ def save_gtfs(gtfs: GTFS, directory: str) -> None:
         PermissionError when directory is not writable
     """
     for field in dataclasses.fields(gtfs):
-        gtfs_data: pd.DataFrame = gtfs.__getattribute__(field.name)
+        gtfs_data: duckdb.DuckDBPyRelation = gtfs.__getattribute__(field.name)
         if gtfs_data is not None:
-            gtfs_data.to_csv(os.path.join(directory, f"{field.name}.txt"), index=False)
+            output_path = os.path.join(directory, f"{field.name}.txt")
+            columns = gtfs_data.columns
+            rows = gtfs_data.fetchall()
+            with open(output_path, "w", newline="") as f:
+                writer = csv.writer(f, lineterminator="\n")
+                writer.writerow(columns)
+                writer.writerows(rows)
 
 
 def filter_by_column_values(
-    df: pd.DataFrame, col_name: str, accepted_values: typing.List[str]
-) -> pd.DataFrame:
+    rel: duckdb.DuckDBPyRelation, col_name: str, accepted_values: typing.List[str]
+) -> duckdb.DuckDBPyRelation:
     """
-    Filters a dataframe by column such as a SQL 'IN' filtering
+    Filters a relation by column such as a SQL 'IN' filtering
 
     Keep rows with value in accepted values
     (discard rows with empty or different value)
 
     Args:
-        df: dataframe to fiter
+        rel: relation to filter
         col_name: column to filter
         accepted_values: values to keep
 
     Returns:
-        Filtered GTFS
+        Filtered relation
 
     Raises:
-        KeyError when column is not in dataframe
+        KeyError when column is not in relation
     """
-    return df[df[col_name].isin(accepted_values)]
+    if col_name not in rel.columns:
+        raise KeyError(col_name)
+    if not accepted_values:
+        return rel.filter("1=0")
+    escaped = [str(v).replace("'", "''") for v in accepted_values]
+    values_str = ", ".join(f"'{v}'" for v in escaped)
+    return rel.filter(f'"{col_name}" IN ({values_str})')
 
 
 def filter_by_column_values_optional(
-    df: pd.DataFrame, col_name: str, accepted_values: typing.List[str]
-) -> pd.DataFrame:
+    rel: duckdb.DuckDBPyRelation, col_name: str, accepted_values: typing.List[str]
+) -> duckdb.DuckDBPyRelation:
     """
-    Filters a dataframe by an optional column such as a SQL 'IN' filtering
+    Filters a relation by an optional column such as a SQL 'IN' filtering
 
     When column does not exist, do nothing
     When column exists, keep rows with value in accepted values or with an empty value
     (discard rows with different values ONLY)
 
     Args:
-        df: dataframe to fiter
+        rel: relation to filter
         col_name: column to filter
         accepted_values: values to keep
 
     Returns:
-        Filtered GTFS
+        Filtered relation
     """
-    if col_name not in df:
-        # column is not present, do not filter
-        return df
-    # accept values in accepted_values or na (= empty value)
-    return df[df[col_name].isin(accepted_values) | df[col_name].isna()]
+    if col_name not in rel.columns:
+        return rel
+    if not accepted_values:
+        return rel.filter(f'"{col_name}" IS NULL')
+    escaped = [str(v).replace("'", "''") for v in accepted_values]
+    values_str = ", ".join(f"'{v}'" for v in escaped)
+    return rel.filter(f'"{col_name}" IN ({values_str}) OR "{col_name}" IS NULL')
 
 
 def get_unique_not_null_column_values(
-    df: pd.DataFrame, col_name: str
+    rel: duckdb.DuckDBPyRelation, col_name: str
 ) -> typing.List[str]:
     """
-    Retrieves all distinct not-null values from a dataframe column
+    Retrieves all distinct not-null values from a relation column
 
-    Similar to SQL 'SELECT distinct(col_name) FROM df WHERE col_name IS NOT NULL'
+    Similar to SQL 'SELECT distinct(col_name) FROM rel WHERE col_name IS NOT NULL'
 
     Args:
-        df: dataframe to retrieves unique values of
-        col_name: dataframe's column to retrieves unique values of
+        rel: relation to retrieves unique values of
+        col_name: relation's column to retrieves unique values of
 
     Returns:
-        All distinct values from a dataframe column
+        All distinct values from a relation column
 
     Raises:
-        KeyError when column is not in dataframe
+        KeyError when column is not in relation
     """
-    return df[col_name].dropna().unique().tolist()
+    if col_name not in rel.columns:
+        raise KeyError(col_name)
+    result = rel.select(f'"{col_name}"').filter(f'"{col_name}" IS NOT NULL').distinct()
+    return [row[0] for row in result.fetchall()]
 
 
 def filter_by_route_id(gtfs_in: GTFS, route_ids: typing.List[str]) -> GTFS:
@@ -274,13 +296,14 @@ def filter_by_route_id(gtfs_in: GTFS, route_ids: typing.List[str]) -> GTFS:
 
     stop_times = filter_by_column_values(stop_times, "trip_id", trip_ids)
     stop_ids_from_stop_times = get_unique_not_null_column_values(stop_times, "stop_id")
-    filtered_stops = stops[stops["stop_id"].isin(stop_ids_from_stop_times)]
-    filtered_stops_parent_stations = filtered_stops[
-        filtered_stops["parent_station"].str.len() > 0
+    filtered_stops = filter_by_column_values(stops, "stop_id", stop_ids_from_stop_times)
+    filtered_stops_parent_stations = filtered_stops.filter("length(parent_station) > 0")
+    stop_ids_from_parent_stations = [
+        row[0]
+        for row in filtered_stops_parent_stations.select('"parent_station"')
+        .distinct()
+        .fetchall()
     ]
-    stop_ids_from_parent_stations = (
-        filtered_stops_parent_stations["parent_station"].unique().tolist()
-    )
     stop_ids = list(set(stop_ids_from_stop_times + stop_ids_from_parent_stations))
     stops = filter_by_column_values(stops, "stop_id", stop_ids)
 

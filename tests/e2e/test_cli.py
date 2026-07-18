@@ -4,7 +4,7 @@ import subprocess
 import typing
 import zipfile
 
-import pandas as pd
+import duckdb
 import pytest
 
 from gtfs_filtering.core import get_unique_not_null_column_values
@@ -30,12 +30,11 @@ def test_cli__when_filtering_by_route_id__filters_by_route_id(
     output_gtfs_zip = zipfile.ZipFile(output_gtfs)
     routes_bytes = output_gtfs_zip.read("routes.txt")
     routes_str = io.StringIO(routes_bytes.decode("UTF-8"))
-    routes = pd.read_csv(routes_str)
-    output_route_ids = get_unique_not_null_column_values(routes, "route_id").sort()
-    expected_route_ids = route_ids.sort()
-    assert output_route_ids == expected_route_ids, (
-        "output GTFS is filtered by route_ids"
-    )
+    routes = duckdb.read_csv(routes_str, dtype={"route_id": "varchar"})
+    output_route_ids = get_unique_not_null_column_values(routes, "route_id")
+    output_route_ids.sort()
+    route_ids.sort()
+    assert output_route_ids == route_ids, "output GTFS is filtered by route_ids"
 
 
 def test_cli__when_filtering_by_trip_id__filters_by_trip_id(
@@ -57,10 +56,11 @@ def test_cli__when_filtering_by_trip_id__filters_by_trip_id(
     output_gtfs_zip = zipfile.ZipFile(output_gtfs)
     trips_bytes = output_gtfs_zip.read("trips.txt")
     trips_str = io.StringIO(trips_bytes.decode("UTF-8"))
-    trips = pd.read_csv(trips_str)
-    output_trip_ids = get_unique_not_null_column_values(trips, "trip_id").sort()
-    expected_trip_ids = trip_ids.sort()
-    assert output_trip_ids == expected_trip_ids, "output GTFS is filtered by trip_ids"
+    trips = duckdb.read_csv(trips_str)
+    output_trip_ids = get_unique_not_null_column_values(trips, "trip_id")
+    output_trip_ids.sort()
+    trip_ids.sort()
+    assert output_trip_ids == trip_ids, "output GTFS is filtered by trip_ids"
 
 
 @pytest.mark.parametrize(

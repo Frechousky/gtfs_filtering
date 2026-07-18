@@ -1,9 +1,9 @@
 import os
 
-import pandas as pd
+import duckdb
 import pytest
 
-from gtfs_filtering.core import parse_gtfs_file
+from gtfs_filtering.core import EmptyDataError, parse_gtfs_file
 from tests.unit.conftest import NOT_EXISTING_FILE, EMPTY_FILE, VALID_GTFS_FILE
 
 
@@ -13,7 +13,7 @@ def test_parse_gtfs_file__when_file_is_valid__returns_dataframe(
     res = parse_gtfs_file(tmp_path, VALID_GTFS_FILE)
 
     assert res is not None, "should not be None"
-    assert isinstance(res, pd.DataFrame), "should be a DataFrame"
+    assert isinstance(res, duckdb.DuckDBPyRelation), "should be a DuckDBPyRelation"
 
 
 def test_parse_gtfs_file__when_directory_does_not_exist__raises_file_not_found_error():
@@ -41,5 +41,5 @@ def test_parse_gtfs_file__when_file_is_empty__raises_empty_data_error(
     with open(os.path.join(tmp_path, EMPTY_FILE), "r") as f:
         assert f.read() == "", "file should be empty"
 
-    with pytest.raises(pd.errors.EmptyDataError):
+    with pytest.raises(EmptyDataError):
         parse_gtfs_file(tmp_path, EMPTY_FILE)
