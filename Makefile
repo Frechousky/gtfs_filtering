@@ -32,7 +32,7 @@ dist/cli: gtfs_filtering/core.py gtfs_filtering/cli.py pyproject.toml uv.lock
 	rm -rf build/ cli.spec
 dist/gui: gtfs_filtering/core.py gtfs_filtering/gui.py pyproject.toml uv.lock
 	@echo "package gui application"
-	uv run pyinstaller -F gtfs_filtering/gui.py
+	uv run pyinstaller -F --add-data "assets:assets" gtfs_filtering/gui.py
 	rm -rf build/ gui.spec
 cli: dist/cli
 gui: dist/gui

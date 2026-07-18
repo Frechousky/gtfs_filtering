@@ -1,4 +1,6 @@
 import dataclasses
+import locale
+import pathlib
 import os
 import sys
 import tempfile
@@ -6,6 +8,7 @@ import typing
 import zipfile
 
 import duckdb
+import i18n
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QApplication,
@@ -24,29 +27,23 @@ from PyQt6.QtWidgets import (
 
 from gtfs_filtering.core import FilterType, perform_filter
 
-APP_NAME = "GTFS Filtering"
+_ASSETS_DIR = pathlib.Path(__file__).resolve().parent / "assets"
+if not _ASSETS_DIR.exists():
+    _ASSETS_DIR = (pathlib.Path(__file__).resolve().parent / ".." / "assets").resolve()
+_LOCALES_DIR = _ASSETS_DIR / "i18n"
+_SUPPORTED_LOCALES = {"fr", "en"}
 
-DELETE_FILTER_VALUES_LABEL = "Supprimer la/les valeur(s) à filtrer sélectionnée(s)"
-ERROR_LABEL = "Erreur"
-ERROR_READING_INPUT_GTFS_LABEL = "Erreur lors de la lecture du GTFS à filtrer. Vérifier que le GTFS existe et qu'il est valide"
-FILTERING_IS_SUCCESSFUL_LABEL = "Filtrage réaliser avec succès"
-FILTER_TYPE_LABEL = "Type de filtre"
-FILTER_VALUES_LABEL = "Valeurs à filtrer"
-INPUT_GTFS_LABEL = "GTFS à filtrer"
-INPUT_GTFS_SELECT_CAPTION_LABEL = "Sélectionner le GTFS à filtrer"
-INPUT_GTFS_SELECT_FILTER_LABEL = "Fichier zip (*.zip)"
-OUTPUT_GTFS_FILENAME_LABEL = "Nom de l'archive de sortie"
-OUTPUT_GTFS_FOLDER_LABEL = "Sélection du répertoire de sortie"
-OUTPUT_GTFS_FOLDER_SELECT_CAPTION_LABEL = "Sélectionner le dossier de sortie"
-OUTPUT_GTFS_FULLPATH_LABEL = "Chemin complet vers l'archive de sortie"
-OVERWRITE_OUTPUT_GTFS_LABEL = "Ecraser le GTFS de sortie s'il existe ?"
-SELECT_INPUT_GTFS_LABEL = "Sélection du GTFS à filtrer (.zip)"
-SELECT_LABEL = "Sélectionner"
-START_FILTERING_LABEL = "Lancer le filtrage"
-SUCCESS_LABEL = "Succès"
-WARNING_INPUT_GTFS_NOT_SELECTED_LABEL = "Veuillez sélectionner le GTFS à filtrer"
-WARNING_LABEL = "Avertissement"
-WARNING_NO_FILTER_VALUES_LABEL = "Veuillez sélectionner au moins une valeur à filtrer"
+i18n.set("file_format", "yaml")
+i18n.load_path.append(str(_LOCALES_DIR))
+i18n.set('filename_format', '{locale}.{format}')
+i18n.set("fallback", "en")
+
+
+try:
+    _lang = (locale.getlocale()[0] or "en").split("_")[0]
+except Exception:
+    _lang = "en"
+i18n.set("locale", _lang if _lang in _SUPPORTED_LOCALES else "en")
 
 
 @dataclasses.dataclass
@@ -63,33 +60,33 @@ class MainWindowModel:
 
 
 def open_error_message_box(message: str):
-    QMessageBox(QMessageBox.Icon.Critical, ERROR_LABEL, message).exec()
+    QMessageBox(QMessageBox.Icon.Critical, i18n.t("error"), message).exec()
 
 
 def open_warning_message_box(message: str):
-    QMessageBox(QMessageBox.Icon.Warning, WARNING_LABEL, message).exec()
+    QMessageBox(QMessageBox.Icon.Warning, i18n.t("warning"), message).exec()
 
 
 def open_success_message_box(message: str):
-    QMessageBox(QMessageBox.Icon.Information, SUCCESS_LABEL, message).exec()
+    QMessageBox(QMessageBox.Icon.Information, i18n.t("success"), message).exec()
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle(APP_NAME)
+        self.setWindowTitle(i18n.t("app_name"))
         self.model = MainWindowModel()
 
         main_layout = QFormLayout()
 
         # GTFS input zip
-        self.input_gtfs_zip_select_button = QPushButton(text=SELECT_LABEL)
+        self.input_gtfs_zip_select_button = QPushButton(text=i18n.t("select"))
         self.input_gtfs_zip_selected_file_line_edit = QLineEdit()
         self.input_gtfs_zip_selected_file_line_edit.setReadOnly(True)
 
         # GTFS output zip
-        self.output_gtfs_zip_folder_select_button = QPushButton(text=SELECT_LABEL)
+        self.output_gtfs_zip_folder_select_button = QPushButton(text=i18n.t("select"))
         self.output_gtfs_zip_folder_line_edit = QLineEdit(
             text=self.model.output_gtfs_zip_folder
         )
@@ -108,8 +105,8 @@ class MainWindow(QMainWindow):
 
         # Filter type
         self.filter_type_select = QComboBox()
-        self.filter_type_select.addItem("routeId", FilterType.ROUTE_ID)
-        self.filter_type_select.addItem("tripId", FilterType.TRIP_ID)
+        for filter_type in FilterType:
+            self.filter_type_select.addItem(filter_type.value, filter_type)
         self.filter_type_select.setDisabled(True)
 
         # Filter values
@@ -119,11 +116,13 @@ class MainWindow(QMainWindow):
         )
 
         # Delete filter values
-        self.delete_filter_values_push_button = QPushButton(DELETE_FILTER_VALUES_LABEL)
+        self.delete_filter_values_push_button = QPushButton(
+            i18n.t("delete_filter_values")
+        )
         self.delete_filter_values_push_button.setDisabled(True)
 
         # Start filtering
-        self.start_filtering_push_button = QPushButton(START_FILTERING_LABEL)
+        self.start_filtering_push_button = QPushButton(i18n.t("start_filtering"))
 
         # Signal handlers
         self.input_gtfs_zip_select_button.clicked.connect(
@@ -146,24 +145,27 @@ class MainWindow(QMainWindow):
         )
 
         # Add widgets to main_layout
-        main_layout.addRow(SELECT_INPUT_GTFS_LABEL, self.input_gtfs_zip_select_button)
         main_layout.addRow(
-            INPUT_GTFS_LABEL, self.input_gtfs_zip_selected_file_line_edit
+            i18n.t("select_input_gtfs"), self.input_gtfs_zip_select_button
         )
         main_layout.addRow(
-            OUTPUT_GTFS_FILENAME_LABEL, self.output_gtfs_zip_filename_line_edit
+            i18n.t("input_gtfs"), self.input_gtfs_zip_selected_file_line_edit
         )
         main_layout.addRow(
-            OUTPUT_GTFS_FOLDER_LABEL, self.output_gtfs_zip_folder_select_button
+            i18n.t("output_gtfs_filename"), self.output_gtfs_zip_filename_line_edit
         )
         main_layout.addRow(
-            OUTPUT_GTFS_FULLPATH_LABEL, self.output_gtfs_zip_fullpath_line_edit
+            i18n.t("output_gtfs_folder_select"),
+            self.output_gtfs_zip_folder_select_button,
         )
         main_layout.addRow(
-            OVERWRITE_OUTPUT_GTFS_LABEL, self.overwrite_output_gtfs_check_box
+            i18n.t("output_gtfs_fullpath"), self.output_gtfs_zip_fullpath_line_edit
         )
-        main_layout.addRow(FILTER_TYPE_LABEL, self.filter_type_select)
-        main_layout.addRow(FILTER_VALUES_LABEL, self.filter_values_list)
+        main_layout.addRow(
+            i18n.t("overwrite_output_gtfs"), self.overwrite_output_gtfs_check_box
+        )
+        main_layout.addRow(i18n.t("filter_type"), self.filter_type_select)
+        main_layout.addRow(i18n.t("filter_values"), self.filter_values_list)
         main_layout.addWidget(self.delete_filter_values_push_button)
         main_layout.addWidget(self.start_filtering_push_button)
 
@@ -220,7 +222,7 @@ class MainWindow(QMainWindow):
             self.model.route_ids_from_input_gtfs.sort()
             self.model.trip_ids_from_input_gtfs.sort()
         except Exception:
-            open_error_message_box(ERROR_READING_INPUT_GTFS_LABEL)
+            open_error_message_box(i18n.t("error_reading_input_gtfs"))
         finally:
             if routes_tmp and os.path.exists(routes_tmp):
                 os.unlink(routes_tmp)
@@ -237,9 +239,9 @@ class MainWindow(QMainWindow):
     def on__select_input_gtfs_zip__clicked_handler(self):
         input_gtfs_zip, _ = QFileDialog.getOpenFileName(
             self,
-            caption=INPUT_GTFS_SELECT_CAPTION_LABEL,
+            caption=i18n.t("input_gtfs_select_caption"),
             directory=".",
-            filter=INPUT_GTFS_SELECT_FILTER_LABEL,
+            filter=i18n.t("input_gtfs_select_filter"),
         )
         if input_gtfs_zip:
             self.model.input_gtfs_zip = input_gtfs_zip
@@ -253,7 +255,7 @@ class MainWindow(QMainWindow):
 
     def on__select_output_gtfs_zip_folder__clicked_handler(self):
         self.model.output_gtfs_zip_folder = QFileDialog.getExistingDirectory(
-            self, OUTPUT_GTFS_FOLDER_SELECT_CAPTION_LABEL
+            self, i18n.t("output_gtfs_folder_select_caption")
         )
         self.output_gtfs_zip_folder_line_edit.setText(self.model.output_gtfs_zip_folder)
         self.output_gtfs_zip_fullpath_line_edit.setText(
@@ -271,11 +273,11 @@ class MainWindow(QMainWindow):
 
     def on__start_filtering_push_button__clicked_handler(self):
         if not self.model.input_gtfs_zip:
-            open_warning_message_box(WARNING_INPUT_GTFS_NOT_SELECTED_LABEL)
+            open_warning_message_box(i18n.t("warning_input_gtfs_not_selected"))
             return
         filter_values = self._get_filter_values()
         if not filter_values:
-            open_warning_message_box(WARNING_NO_FILTER_VALUES_LABEL)
+            open_warning_message_box(i18n.t("warning_no_filter_values"))
             return
         self._disable_all_inputs(True)
         try:
@@ -286,7 +288,7 @@ class MainWindow(QMainWindow):
                 filter_values,
                 self._is_overwrite_output_gtfs(),
             )
-            open_success_message_box(FILTERING_IS_SUCCESSFUL_LABEL)
+            open_success_message_box(i18n.t("filtering_successful"))
         except Exception as e:
             open_error_message_box(str(e))
         self._disable_all_inputs(False)
