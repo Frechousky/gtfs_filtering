@@ -82,8 +82,8 @@ make tests           # both
 ### Build standalone binaries
 
 ```bash
-make package-cli     # produces dist/cli
-make package-gui     # produces dist/gui
+make cli     # produces dist/cli
+make gui     # produces dist/gui
 ```
 
 ### Dependency management
