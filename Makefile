@@ -1,38 +1,38 @@
 # dependencies
 install-deps:
-	pipenv sync
+	uv sync --no-dev
 install-all-deps:
-	pipenv sync -d
+	uv sync --all-groups
 update-deps:
-	pipenv update
+	uv lock --upgrade
 check-deps:
-	pipenv check # check dependencies for vulnerabilities
+	uvx pip-audit
 
 # linting & formatting
 lint-check:
-	pipenv run ruff check .
+	uv run ruff check .
 lint:
-	pipenv run ruff check . --fix
+	uv run ruff check . --fix
 format-check:
-	pipenv run ruff format --check .
+	uv run ruff format --check .
 format:
-	pipenv run ruff format .
+	uv run ruff format .
 
 # testing
 e2e: package-cli
-	pipenv run pytest tests/e2e
+	uv run pytest tests/e2e
 unit:
-	pipenv run pytest tests/unit
+	uv run pytest tests/unit
 tests: e2e unit
 
 # packaging
 dist/cli: gtfs_filtering/core.py gtfs_filtering/cli.py
 	@echo "package cli application"
-	pipenv run pyinstaller -F gtfs_filtering/cli.py
+	uv run pyinstaller -F gtfs_filtering/cli.py
 	rm -rf build/ cli.spec
 dist/gui: gtfs_filtering/core.py gtfs_filtering/gui.py
 	@echo "package gui application"
-	pipenv run pyinstaller -F gtfs_filtering/gui.py
+	uv run pyinstaller -F gtfs_filtering/gui.py
 	rm -rf build/ gui.spec
 package-cli: dist/cli
 package-gui: dist/gui

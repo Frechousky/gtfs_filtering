@@ -7,17 +7,14 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
           python-version: '3.11'
-          cache: 'pipenv'
+          enable-caching: true
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pipenv
-          make install-all-deps
+        run: uv sync --all-groups
 
       - name: Lint checking
         run: make lint-check
