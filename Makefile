@@ -26,11 +26,11 @@ unit:
 tests: e2e unit
 
 # packaging
-dist/cli: gtfs_filtering/core.py gtfs_filtering/cli.py
+dist/cli: gtfs_filtering/core.py gtfs_filtering/cli.py pyproject.toml uv.lock
 	@echo "package cli application"
 	uv run pyinstaller -F gtfs_filtering/cli.py
 	rm -rf build/ cli.spec
-dist/gui: gtfs_filtering/core.py gtfs_filtering/gui.py
+dist/gui: gtfs_filtering/core.py gtfs_filtering/gui.py pyproject.toml uv.lock
 	@echo "package gui application"
 	uv run pyinstaller -F gtfs_filtering/gui.py
 	rm -rf build/ gui.spec
