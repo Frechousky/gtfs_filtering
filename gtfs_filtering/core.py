@@ -296,15 +296,22 @@ def filter_by_route_id(gtfs_in: GTFS, route_ids: typing.List[str]) -> GTFS:
 
     stop_times = filter_by_column_values(stop_times, "trip_id", trip_ids)
     stop_ids_from_stop_times = get_unique_not_null_column_values(stop_times, "stop_id")
-    filtered_stops = filter_by_column_values(stops, "stop_id", stop_ids_from_stop_times)
-    filtered_stops_parent_stations = filtered_stops.filter("length(parent_station) > 0")
-    stop_ids_from_parent_stations = [
-        row[0]
-        for row in filtered_stops_parent_stations.select('"parent_station"')
-        .distinct()
-        .fetchall()
-    ]
-    stop_ids = list(set(stop_ids_from_stop_times + stop_ids_from_parent_stations))
+    if "parent_station" in stops:
+        filtered_stops = filter_by_column_values(
+            stops, "stop_id", stop_ids_from_stop_times
+        )
+        filtered_stops_parent_stations = filtered_stops.filter(
+            "length(parent_station) > 0"
+        )
+        stop_ids_from_parent_stations = [
+            row[0]
+            for row in filtered_stops_parent_stations.select('"parent_station"')
+            .distinct()
+            .fetchall()
+        ]
+        stop_ids = list(set(stop_ids_from_stop_times + stop_ids_from_parent_stations))
+    else:
+        stop_ids = set(stop_ids_from_stop_times)
     stops = filter_by_column_values(stops, "stop_id", stop_ids)
 
     service_ids = get_unique_not_null_column_values(trips, "service_id")
