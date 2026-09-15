@@ -45,6 +45,7 @@ class GTFS:
     fare_transfer_rules: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
     areas: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
     stop_areas: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    route_networks: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
     shapes: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
     frequencies: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
     transfers: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
@@ -67,6 +68,7 @@ OPTIONAL_GTFS_FILES = [
     "fare_transfer_rules.txt",
     "areas.txt",
     "stop_areas.txt",
+    "route_networks.txt",
     "shapes.txt",
     "frequencies.txt",
     "transfers.txt",
@@ -283,6 +285,7 @@ def filter_by_route_id(gtfs_in: GTFS, route_ids: typing.List[str]) -> GTFS:
     pathways = gtfs_in.pathways
     levels = gtfs_in.levels
     attributions = gtfs_in.attributions
+    route_networks = gtfs_in.route_networks
 
     routes = filter_by_column_values(routes, "route_id", route_ids)
     agency_ids = get_unique_not_null_column_values(routes, "agency_id")
@@ -377,8 +380,11 @@ def filter_by_route_id(gtfs_in: GTFS, route_ids: typing.List[str]) -> GTFS:
         attributions = filter_by_column_values_optional(
             attributions, "trip_id", trip_ids
         )
-
-    # TODO check if there is filtering to perform by routes.network_id
+    if route_networks is not None:
+        # optional file
+        route_networks = filter_by_column_values_optional(
+            route_networks, "route_id", route_ids
+        )
 
     return GTFS(
         agency=agency,
@@ -391,6 +397,7 @@ def filter_by_route_id(gtfs_in: GTFS, route_ids: typing.List[str]) -> GTFS:
         areas=areas,
         stop_areas=stop_areas,
         shapes=shapes,
+        route_networks=route_networks,
         frequencies=frequencies,
         transfers=transfers,
         pathways=pathways,
