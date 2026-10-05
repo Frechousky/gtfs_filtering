@@ -29,3 +29,7 @@ dev = [
     "pytest>=8.4.2",
     "ruff>=0",
 ]
+
+[tool.vercel]
+entrypoint = "gtfs_filtering.web.main:app"
+# Learn More: https://vercel.com/docs/frameworks/backend/fastapi#exporting-the-fastapi-application
