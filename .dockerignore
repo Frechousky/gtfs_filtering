@@ -1,0 +1,13 @@
+.git
+.github
+.idea
+.venv
+.pytest_cache
+.ruff_cache
+**/__pycache__
+.env
+assets
+build
+dist
+tests
+*.spec
