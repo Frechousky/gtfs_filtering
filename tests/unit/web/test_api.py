@@ -18,6 +18,7 @@ DATA_FOLDER = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "data")
 )
 FILTER_URL = "/api/v1/filter"
+FILTER_VALUES_URL = "/api/v1/filter/values"
 
 
 @pytest.fixture()
@@ -84,6 +85,17 @@ def test_health__returns_ok(client: TestClient):
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+
+def test_index__returns_html_page(
+    client_with_settings: typing.Callable[..., TestClient],
+):
+    response = client_with_settings(max_upload_size_mb=42).get("/")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert "Maximum size: 42 MB" in response.text
+    assert "{{" not in response.text
 
 
 def test_filter__when_filtering_by_route_id__returns_filtered_gtfs(
@@ -262,3 +274,62 @@ def test_filter__when_archive_declares_wrong_uncompressed_size__returns_422(
     assert response.json()["detail"].startswith(
         "Uploaded file is not a valid zip archive"
     )
+
+
+def test_filter_values__returns_route_trip_and_agency_ids(client: TestClient):
+    response = client.post(
+        FILTER_VALUES_URL,
+        files={"gtfs_zip": ("gtfs.zip", read_gtfs("gtfs_nyc.zip"), "application/zip")},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["agency_ids"] == ["MTA NYCT"]
+    assert body["route_ids"][:3] == ["1", "2", "3"]
+    assert body["route_ids"] == sorted(set(body["route_ids"]))
+    assert "AFA23GEN-1038-Sunday-00_000600_1..S03R" in body["trip_ids"]
+    assert body["trip_ids"] == sorted(set(body["trip_ids"]))
+
+
+def test_filter_values__when_uploaded_file_is_not_a_zip__returns_422(
+    client: TestClient,
+):
+    response = client.post(
+        FILTER_VALUES_URL,
+        files={"gtfs_zip": ("gtfs.zip", b"not a zip", "application/zip")},
+    )
+
+    assert response.status_code == 422
+    assert response.json() == {"detail": "Uploaded file is not a valid zip archive."}
+
+
+def test_filter_values__when_required_file_is_missing__returns_422(
+    client: TestClient,
+):
+    response = client.post(
+        FILTER_VALUES_URL,
+        files={
+            "gtfs_zip": (
+                "gtfs.zip",
+                read_gtfs("gtfs_missing_routes_txt.zip"),
+                "application/zip",
+            )
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "detail": "GTFS is invalid: file 'routes.txt' is missing."
+    }
+
+
+def test_filter_values__when_archive_has_too_many_entries__returns_413(
+    client_with_settings: typing.Callable[..., TestClient],
+):
+    content = make_zip({f"file_{i}.txt": b"a" for i in range(3)})
+
+    response = client_with_settings(max_archive_entries=2).post(
+        FILTER_VALUES_URL, files={"gtfs_zip": ("gtfs.zip", content, "application/zip")}
+    )
+
+    assert response.status_code == 413

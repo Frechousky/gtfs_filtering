@@ -7,7 +7,7 @@ import zipfile
 import duckdb
 from fastapi import UploadFile
 
-from gtfs_filtering.core import FilterType, perform_filter
+from gtfs_filtering.core import FilterType, get_filter_values, perform_filter
 from gtfs_filtering.web.config import Settings
 
 INPUT_GTFS_FILENAME = "input_gtfs.zip"
@@ -108,6 +108,51 @@ def check_archive(
             )
 
 
+def check_uploaded_archive(input_gtfs_zip: str, settings: Settings) -> None:
+    """
+    Checks an uploaded file is a zip archive safe to extract
+
+    Raises:
+        InvalidGTFSError when uploaded file is not a zip archive
+        UnsafeArchiveError when uploaded archive exceeds archive limits
+    """
+    if not zipfile.is_zipfile(input_gtfs_zip):
+        raise InvalidGTFSError("Uploaded file is not a valid zip archive.")
+    check_archive(
+        input_gtfs_zip,
+        settings.max_uncompressed_size_bytes,
+        settings.max_archive_entries,
+        settings.max_compression_ratio,
+    )
+
+
+def list_filter_values(
+    input_gtfs_zip: str, settings: Settings
+) -> dict[FilterType, list[str]]:
+    """
+    Retrieves values available for each filter type from a GTFS zip (blocking, must be run in a threadpool)
+
+    Args:
+        input_gtfs_zip: fullpath of GTFS zip to retrieve filter values from
+        settings: web API settings (archive limits)
+
+    Returns:
+        sorted distinct values for each filter type
+
+    Raises:
+        UnsafeArchiveError when input GTFS exceeds archive limits
+        InvalidGTFSError when input GTFS cannot be read
+    """
+    check_uploaded_archive(input_gtfs_zip, settings)
+    try:
+        with _FILTER_LOCK:
+            return get_filter_values(input_gtfs_zip)
+    except zipfile.BadZipFile as e:
+        raise InvalidGTFSError(f"Uploaded file is not a valid zip archive: {e}") from e
+    except (FileNotFoundError, ValueError, duckdb.Error) as e:
+        raise InvalidGTFSError(str(e)) from e
+
+
 def filter_gtfs(
     input_gtfs_zip: str,
     directory: str,
@@ -132,14 +177,7 @@ def filter_gtfs(
         UnsafeArchiveError when input GTFS exceeds archive limits
         InvalidGTFSError when input GTFS cannot be read or filtered
     """
-    if not zipfile.is_zipfile(input_gtfs_zip):
-        raise InvalidGTFSError("Uploaded file is not a valid zip archive.")
-    check_archive(
-        input_gtfs_zip,
-        settings.max_uncompressed_size_bytes,
-        settings.max_archive_entries,
-        settings.max_compression_ratio,
-    )
+    check_uploaded_archive(input_gtfs_zip, settings)
     output_gtfs_zip = os.path.join(directory, OUTPUT_GTFS_FILENAME)
     try:
         with _FILTER_LOCK:

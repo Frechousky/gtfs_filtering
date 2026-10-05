@@ -528,3 +528,53 @@ def perform_filter(
                 raise ValueError(f"Invalid filter type {filter_type}.")
         save_gtfs(gtfs, extract_dir)
         shutil.make_archive(output_gtfs_zip.rstrip(".zip"), "zip", extract_dir)
+
+
+def get_filter_values(input_gtfs_zip: str) -> dict[FilterType, list[str]]:
+    """
+    Retrieves values available for each filter type from a GTFS zip
+
+    Only extracts and parses GTFS files holding filter values (agency.txt, routes.txt and trips.txt)
+
+    Args:
+        input_gtfs_zip: fullpath GTFS zip to retrieve filter values from
+
+    Returns:
+        sorted distinct values for each filter type,
+        agency ids are empty when agency.txt has no agency_id column (single agency GTFS)
+
+    Raises:
+        FileNotFoundError when a required GTFS file is missing
+        EmptyDataError when a required GTFS file is empty
+        ValueError when a required column is missing
+    """
+    with tempfile.TemporaryDirectory(prefix="gtfs-filtering-") as extract_dir:
+        with zipfile.ZipFile(input_gtfs_zip) as archive:
+            for gtfs_file in ("agency.txt", "routes.txt", "trips.txt"):
+                try:
+                    archive.extract(gtfs_file, extract_dir)
+                except KeyError:
+                    raise FileNotFoundError(
+                        f"GTFS is invalid: file '{gtfs_file}' is missing."
+                    )
+        agency = parse_gtfs_file(extract_dir, "agency.txt")
+        routes = parse_gtfs_file(extract_dir, "routes.txt")
+        trips = parse_gtfs_file(extract_dir, "trips.txt")
+        try:
+            filter_values = {
+                # agency_id is not mandatory in agency.txt when there is a single agency
+                FilterType.AGENCY_ID: (
+                    get_unique_not_null_column_values(agency, "agency_id")
+                    if "agency_id" in agency.columns
+                    else []
+                ),
+                FilterType.ROUTE_ID: get_unique_not_null_column_values(
+                    routes, "route_id"
+                ),
+                FilterType.TRIP_ID: get_unique_not_null_column_values(trips, "trip_id"),
+            }
+        except KeyError as e:
+            raise ValueError(f"GTFS is invalid: column {e} is missing.") from e
+    return {
+        filter_type: sorted(values) for filter_type, values in filter_values.items()
+    }

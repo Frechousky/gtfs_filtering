@@ -2,7 +2,7 @@ from fastapi import FastAPI
 
 from gtfs_filtering.web.config import get_settings
 from gtfs_filtering.web.errors import register_exception_handlers
-from gtfs_filtering.web.routers import filtering, health
+from gtfs_filtering.web.routers import filtering, health, ui
 
 API_V1_PREFIX = "/api/v1"
 
@@ -14,6 +14,7 @@ def create_app() -> FastAPI:
         summary="Filter a GTFS feed by route ID, trip ID or agency ID",
     )
     register_exception_handlers(app)
+    app.include_router(ui.router)
     app.include_router(health.router)
     app.include_router(filtering.router, prefix=API_V1_PREFIX)
     return app
