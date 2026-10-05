@@ -6,10 +6,11 @@ import logging
 import os
 import shutil
 import tempfile
-import typing
 import zipfile
 
 import duckdb
+
+logger = logging.getLogger(__name__)
 
 
 class EmptyDataError(ValueError):
@@ -24,30 +25,30 @@ class GTFS:
     Each field stores data from a single GTFS file, e.g. 'agency' field stores data from GTFS file 'agency.txt'
     """
 
-    agency: typing.Optional[duckdb.DuckDBPyRelation] = None
-    stops: typing.Optional[duckdb.DuckDBPyRelation] = None
-    routes: typing.Optional[duckdb.DuckDBPyRelation] = None
-    trips: typing.Optional[duckdb.DuckDBPyRelation] = None
-    stop_times: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
-    calendar: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
-    calendar_dates: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
-    fare_attributes: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
-    fare_rules: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
-    fare_media: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
-    fare_products: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
-    fare_leg_rules: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
-    fare_transfer_rules: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
-    areas: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
-    stop_areas: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
-    route_networks: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
-    shapes: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
-    frequencies: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
-    transfers: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
-    pathways: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
-    levels: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
-    translations: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
-    feed_info: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
-    attributions: typing.Optional[duckdb.DuckDBPyRelation] = None  # optional
+    agency: duckdb.DuckDBPyRelation | None = None
+    stops: duckdb.DuckDBPyRelation | None = None
+    routes: duckdb.DuckDBPyRelation | None = None
+    trips: duckdb.DuckDBPyRelation | None = None
+    stop_times: duckdb.DuckDBPyRelation | None = None  # optional
+    calendar: duckdb.DuckDBPyRelation | None = None  # optional
+    calendar_dates: duckdb.DuckDBPyRelation | None = None  # optional
+    fare_attributes: duckdb.DuckDBPyRelation | None = None  # optional
+    fare_rules: duckdb.DuckDBPyRelation | None = None  # optional
+    fare_media: duckdb.DuckDBPyRelation | None = None  # optional
+    fare_products: duckdb.DuckDBPyRelation | None = None  # optional
+    fare_leg_rules: duckdb.DuckDBPyRelation | None = None  # optional
+    fare_transfer_rules: duckdb.DuckDBPyRelation | None = None  # optional
+    areas: duckdb.DuckDBPyRelation | None = None  # optional
+    stop_areas: duckdb.DuckDBPyRelation | None = None  # optional
+    route_networks: duckdb.DuckDBPyRelation | None = None  # optional
+    shapes: duckdb.DuckDBPyRelation | None = None  # optional
+    frequencies: duckdb.DuckDBPyRelation | None = None  # optional
+    transfers: duckdb.DuckDBPyRelation | None = None  # optional
+    pathways: duckdb.DuckDBPyRelation | None = None  # optional
+    levels: duckdb.DuckDBPyRelation | None = None  # optional
+    translations: duckdb.DuckDBPyRelation | None = None  # optional
+    feed_info: duckdb.DuckDBPyRelation | None = None  # optional
+    attributions: duckdb.DuckDBPyRelation | None = None  # optional
 
 
 OPTIONAL_GTFS_FILES = [
@@ -132,13 +133,13 @@ def parse_gtfs(directory: str) -> GTFS:
     for gtfs_file in OPTIONAL_GTFS_FILES:
         try:
             optional_file_content = parse_gtfs_file(directory, gtfs_file)
-            attr_name = gtfs_file.rstrip(".txt")
+            attr_name = gtfs_file.removesuffix(".txt")
             gtfs.__setattr__(attr_name, optional_file_content)
         except FileNotFoundError:
             # optional files may be missing
             pass
         except EmptyDataError:
-            logging.warning(f"File {gtfs_file} is present but empty, ignores it")
+            logger.warning(f"File {gtfs_file} is present but empty, ignores it")
 
     return gtfs
 
@@ -174,7 +175,7 @@ def save_gtfs(gtfs: GTFS, directory: str) -> None:
 
 
 def filter_by_column_values(
-    rel: duckdb.DuckDBPyRelation, col_name: str, accepted_values: typing.List[str]
+    rel: duckdb.DuckDBPyRelation, col_name: str, accepted_values: list[str]
 ) -> duckdb.DuckDBPyRelation:
     """
     Filters a relation by column such as a SQL 'IN' filtering
@@ -203,7 +204,7 @@ def filter_by_column_values(
 
 
 def filter_by_column_values_optional(
-    rel: duckdb.DuckDBPyRelation, col_name: str, accepted_values: typing.List[str]
+    rel: duckdb.DuckDBPyRelation, col_name: str, accepted_values: list[str]
 ) -> duckdb.DuckDBPyRelation:
     """
     Filters a relation by an optional column such as a SQL 'IN' filtering
@@ -231,7 +232,7 @@ def filter_by_column_values_optional(
 
 def get_unique_not_null_column_values(
     rel: duckdb.DuckDBPyRelation, col_name: str
-) -> typing.List[str]:
+) -> list[str]:
     """
     Retrieves all distinct not-null values from a relation column
 
@@ -253,7 +254,7 @@ def get_unique_not_null_column_values(
     return [row[0] for row in result.fetchall()]
 
 
-def filter_by_route_id(gtfs_in: GTFS, route_ids: typing.List[str]) -> GTFS:
+def filter_by_route_id(gtfs_in: GTFS, route_ids: list[str]) -> GTFS:
     """
     Filters all GTFS files by route id
 
@@ -426,7 +427,7 @@ def filter_by_route_id(gtfs_in: GTFS, route_ids: typing.List[str]) -> GTFS:
     )
 
 
-def filter_by_trip_id(gtfs_in: GTFS, trip_ids: typing.List[str]) -> GTFS:
+def filter_by_trip_id(gtfs_in: GTFS, trip_ids: list[str]) -> GTFS:
     """
     Filters all GTFS files by trip id
 
@@ -453,7 +454,7 @@ def perform_filter(
     input_gtfs_zip: str,
     output_gtfs_zip: str,
     filter_type: FilterType,
-    filter_values: typing.List[str],
+    filter_values: list[str],
     overwrite_output_gtfs: bool,
 ) -> None:
     """

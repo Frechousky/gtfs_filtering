@@ -1,7 +1,7 @@
 import pytest
 
-from gtfs_filtering.core import filter_by_route_id, GTFS
-from tests.unit.conftest import make_relation, relations_equal, is_empty
+from gtfs_filtering.core import GTFS, filter_by_route_id
+from tests.unit.conftest import is_empty, make_relation, relations_equal
 
 
 @pytest.fixture

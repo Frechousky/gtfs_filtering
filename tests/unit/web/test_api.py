@@ -31,7 +31,7 @@ def read_gtfs(filename: str) -> bytes:
         return f.read()
 
 
-def make_zip(entries: typing.Dict[str, bytes]) -> bytes:
+def make_zip(entries: dict[str, bytes]) -> bytes:
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
         for filename, content in entries.items():
@@ -72,9 +72,7 @@ def client_with_settings() -> typing.Callable[..., TestClient]:
     return make_client
 
 
-def read_output_column(
-    content: bytes, gtfs_file: str, col_name: str
-) -> typing.List[str]:
+def read_output_column(content: bytes, gtfs_file: str, col_name: str) -> list[str]:
     output_gtfs_zip = zipfile.ZipFile(io.BytesIO(content))
     file_str = io.StringIO(output_gtfs_zip.read(gtfs_file).decode("UTF-8"))
     rel = duckdb.read_csv(file_str, all_varchar=True)

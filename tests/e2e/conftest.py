@@ -45,12 +45,12 @@ def output_gtfs(tmp_path) -> str:
 
 
 @pytest.fixture()
-def route_ids() -> typing.List[str]:
+def route_ids() -> list[str]:
     return ["1", "2", "3"]
 
 
 @pytest.fixture()
-def trip_ids() -> typing.List[str]:
+def trip_ids() -> list[str]:
     return [
         "AFA23GEN-1038-Sunday-00_000600_1..S03R",
         "AFA23GEN-1038-Sunday-00_009200_1..N03R",
@@ -70,7 +70,8 @@ def validate_gtfs(
 ) -> typing.Callable[[str], subprocess.CompletedProcess]:
     def inner(gtfs_zip_path: str) -> subprocess.CompletedProcess:
         return subprocess.run(
-            ["java", "-jar", gtfs_validator_jar, "-o", tmp_path, "-i", gtfs_zip_path]
+            ["java", "-jar", gtfs_validator_jar, "-o", tmp_path, "-i", gtfs_zip_path],
+            check=False,
         )
 
     return inner

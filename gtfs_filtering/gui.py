@@ -1,28 +1,27 @@
 import dataclasses
 import locale
-import pathlib
 import os
+import pathlib
 import sys
 import tempfile
-import typing
 import zipfile
 
 import duckdb
 import i18n
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
+    QAbstractItemView,
     QApplication,
     QCheckBox,
     QComboBox,
-    QLineEdit,
-    QMainWindow,
-    QPushButton,
-    QWidget,
     QFileDialog,
     QFormLayout,
-    QMessageBox,
+    QLineEdit,
     QListWidget,
-    QAbstractItemView,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QWidget,
 )
 
 from gtfs_filtering.core import FilterType, perform_filter
@@ -41,7 +40,7 @@ i18n.set("fallback", "en")
 
 try:
     _lang = (locale.getlocale()[0] or "en").split("_")[0]
-except Exception:
+except Exception:  # noqa: BLE001 fallback to default locale
     _lang = "en"
 i18n.set("locale", _lang if _lang in _SUPPORTED_LOCALES else "en")
 
@@ -52,8 +51,8 @@ class MainWindowModel:
     output_gtfs_zip_folder: str = "."
     output_gtfs_zip_filename: str = "output_gtfs.zip"
     filter_type: FilterType = FilterType.ROUTE_ID
-    route_ids_from_input_gtfs: typing.List[str] = None
-    trip_ids_from_input_gtfs: typing.List[str] = None
+    route_ids_from_input_gtfs: list[str] = None
+    trip_ids_from_input_gtfs: list[str] = None
 
     def output_gtfs_zip_fullpath(self):
         return os.path.join(self.output_gtfs_zip_folder, self.output_gtfs_zip_filename)
@@ -184,7 +183,7 @@ class MainWindow(QMainWindow):
         self.delete_filter_values_push_button.setDisabled(disable)
         self.start_filtering_push_button.setDisabled(disable)
 
-    def _get_filter_values(self) -> typing.List[str]:
+    def _get_filter_values(self) -> list[str]:
         return [
             self.filter_values_list.item(i).text()
             for i in range(self.filter_values_list.count())
@@ -221,7 +220,7 @@ class MainWindow(QMainWindow):
             ]
             self.model.route_ids_from_input_gtfs.sort()
             self.model.trip_ids_from_input_gtfs.sort()
-        except Exception:
+        except Exception:  # noqa: BLE001 report any reading error to user
             open_error_message_box(i18n.t("error_reading_input_gtfs"))
         finally:
             if routes_tmp and os.path.exists(routes_tmp):
@@ -289,7 +288,7 @@ class MainWindow(QMainWindow):
                 self._is_overwrite_output_gtfs(),
             )
             open_success_message_box(i18n.t("filtering_successful"))
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 report any filtering error to user
             open_error_message_box(str(e))
         self._disable_all_inputs(False)
 

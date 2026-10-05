@@ -4,7 +4,7 @@ import os
 import duckdb
 import pytest
 
-from gtfs_filtering.core import parse_gtfs, OPTIONAL_GTFS_FILES
+from gtfs_filtering.core import OPTIONAL_GTFS_FILES, parse_gtfs
 
 
 @pytest.fixture()
@@ -90,7 +90,7 @@ def test_parse_gtfs__when_missing_optional_file__returns_gtfs_object(
     gtfs = parse_gtfs("gtfs")
 
     for field in dataclasses.fields(gtfs):
-        if field.name == missing_filename.rstrip(".txt"):
+        if field.name == missing_filename.removesuffix(".txt"):
             # missing file is None
             assert gtfs.__getattribute__(field.name) is None, (
                 f"field {field.name} should be None"
