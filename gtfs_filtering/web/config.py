@@ -16,10 +16,18 @@ class Settings(BaseSettings):
     app_name: str = "gtfs-filtering"
     max_upload_size_mb: int = 200
     upload_chunk_size_bytes: int = 1024 * 1024
+    # zip bomb protection, checked against uploaded archive before extracting it
+    max_uncompressed_size_mb: int = 2048
+    max_archive_entries: int = 100
+    max_compression_ratio: int = 100
 
     @property
     def max_upload_size_bytes(self) -> int:
         return self.max_upload_size_mb * 1024 * 1024
+
+    @property
+    def max_uncompressed_size_bytes(self) -> int:
+        return self.max_uncompressed_size_mb * 1024 * 1024
 
 
 @functools.lru_cache
