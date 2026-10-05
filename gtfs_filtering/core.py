@@ -286,6 +286,14 @@ def filter_by_route_id(gtfs_in: GTFS, route_ids: typing.List[str]) -> GTFS:
     levels = gtfs_in.levels
     attributions = gtfs_in.attributions
     route_networks = gtfs_in.route_networks
+    fare_attributes = gtfs_in.fare_attributes
+    fare_rules = gtfs_in.fare_rules
+    fare_media = gtfs_in.fare_media
+    fare_products = gtfs_in.fare_products
+    fare_leg_rules = gtfs_in.fare_leg_rules
+    fare_transfer_rules = gtfs_in.fare_transfer_rules
+    translations = gtfs_in.translations
+    feed_info = gtfs_in.feed_info
 
     routes = filter_by_column_values(routes, "route_id", route_ids)
     agency_ids = get_unique_not_null_column_values(routes, "agency_id")
@@ -386,6 +394,16 @@ def filter_by_route_id(gtfs_in: GTFS, route_ids: typing.List[str]) -> GTFS:
             route_networks, "route_id", route_ids
         )
 
+    if fare_rules is not None and "route_id" in fare_rules.columns:
+        # route_id is an optional column within fare_rules
+        fare_rules = filter_by_column_values_optional(fare_rules, "route_id", route_ids)
+        if fare_attributes is not None:
+            # optional file
+            fare_ids = get_unique_not_null_column_values(fare_rules, "fare_id")
+            fare_attributes = filter_by_column_values(
+                fare_attributes, "fare_id", fare_ids
+            )
+
     return GTFS(
         agency=agency,
         stops=stops,
@@ -403,6 +421,14 @@ def filter_by_route_id(gtfs_in: GTFS, route_ids: typing.List[str]) -> GTFS:
         pathways=pathways,
         levels=levels,
         attributions=attributions,
+        fare_attributes=fare_attributes,
+        fare_rules=fare_rules,
+        fare_media=fare_media,
+        fare_products=fare_products,
+        fare_leg_rules=fare_leg_rules,
+        fare_transfer_rules=fare_transfer_rules,
+        translations=translations,
+        feed_info=feed_info,
     )
 
 

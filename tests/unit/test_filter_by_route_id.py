@@ -189,6 +189,61 @@ def test_filter_by_route_id__no_calendar__handles_correctly(sample_gtfs):
     ), "calendar_dates should be equal"
 
 
+def test_filter_by_route_id__fare_rules_with_route_id__filters_fare_rules_and_fare_attributes(
+    sample_gtfs,
+):
+    sample_gtfs.fare_attributes = make_relation(
+        {"fare_id": ["F1", "F2", "F3"], "price": ["1.00", "2.00", "3.00"]}
+    )
+    sample_gtfs.fare_rules = make_relation(
+        {"fare_id": ["F1", "F2", "F3"], "route_id": ["R1", "R2", "R3"]}
+    )
+
+    filtered_gtfs = filter_by_route_id(sample_gtfs, ["R1"])
+
+    assert relations_equal(
+        filtered_gtfs.fare_rules,
+        make_relation({"fare_id": ["F1"], "route_id": ["R1"]}),
+    ), "fare_rules should be filtered by route_id"
+    assert relations_equal(
+        filtered_gtfs.fare_attributes,
+        make_relation({"fare_id": ["F1"], "price": ["1.00"]}),
+    ), "fare_attributes should be filtered by remaining fare_id"
+
+
+def test_filter_by_route_id__fare_rules_without_route_id_column__passes_through_unchanged(
+    sample_gtfs,
+):
+    sample_gtfs.fare_attributes = make_relation(
+        {"fare_id": ["F1", "F2"], "price": ["1.00", "2.00"]}
+    )
+    sample_gtfs.fare_rules = make_relation(
+        {"fare_id": ["F1", "F2"], "origin_id": ["Z1", "Z2"]}
+    )
+
+    filtered_gtfs = filter_by_route_id(sample_gtfs, ["R1"])
+
+    assert relations_equal(filtered_gtfs.fare_rules, sample_gtfs.fare_rules), (
+        "fare_rules without a route_id column should pass through unchanged"
+    )
+    assert relations_equal(
+        filtered_gtfs.fare_attributes, sample_gtfs.fare_attributes
+    ), "fare_attributes should be untouched when fare_rules has no route_id column"
+
+
+def test_filter_by_route_id__no_fare_rules__fare_attributes_untouched(sample_gtfs):
+    sample_gtfs.fare_attributes = make_relation(
+        {"fare_id": ["F1", "F2"], "price": ["1.00", "2.00"]}
+    )
+
+    filtered_gtfs = filter_by_route_id(sample_gtfs, ["R1"])
+
+    assert filtered_gtfs.fare_rules is None, "fare_rules should remain none"
+    assert relations_equal(
+        filtered_gtfs.fare_attributes, sample_gtfs.fare_attributes
+    ), "fare_attributes should be untouched when fare_rules is absent"
+
+
 def test_filter_by_route_id__no_calendar_dates__handles_correctly(sample_gtfs):
     sample_gtfs_no_calendar_dates = GTFS(**sample_gtfs.__dict__)
     sample_gtfs_no_calendar_dates.calendar_dates = None
