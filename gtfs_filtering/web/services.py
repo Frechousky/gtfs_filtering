@@ -2,7 +2,6 @@ import os
 import shutil
 import tempfile
 import threading
-import typing
 import zipfile
 
 import duckdb
@@ -60,7 +59,8 @@ async def save_upload(
     """
     path = os.path.join(directory, INPUT_GTFS_FILENAME)
     size = 0
-    with open(path, "wb") as f:
+    # local disk writes are fast enough not to block event loop significantly
+    with open(path, "wb") as f:  # noqa: ASYNC230
         while chunk := await upload.read(chunk_size_bytes):
             size += len(chunk)
             if size > max_size_bytes:
@@ -112,7 +112,7 @@ def filter_gtfs(
     input_gtfs_zip: str,
     directory: str,
     filter_type: FilterType,
-    filter_values: typing.List[str],
+    filter_values: list[str],
     settings: Settings,
 ) -> str:
     """

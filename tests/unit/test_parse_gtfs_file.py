@@ -4,7 +4,7 @@ import duckdb
 import pytest
 
 from gtfs_filtering.core import EmptyDataError, parse_gtfs_file
-from tests.unit.conftest import NOT_EXISTING_FILE, EMPTY_FILE, VALID_GTFS_FILE
+from tests.unit.conftest import EMPTY_FILE, NOT_EXISTING_FILE, VALID_GTFS_FILE
 
 
 def test_parse_gtfs_file__when_file_is_valid__returns_dataframe(

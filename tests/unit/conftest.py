@@ -1,5 +1,4 @@
 import os
-import typing
 
 import duckdb
 import pytest
@@ -12,7 +11,7 @@ VALID_GTFS_FILE_CONTENT = """agency_id,agency_name,agency_url,agency_timezone,ag
 MTA NYCT,MTA New York City Transit,http://www.mta.info,America/New_York,en,718-330-1234"""
 
 
-def make_relation(data: typing.Dict[str, typing.List]) -> duckdb.DuckDBPyRelation:
+def make_relation(data: dict[str, list]) -> duckdb.DuckDBPyRelation:
     """Create a DuckDB relation from a dict of {column_name: [values]}. All values cast to VARCHAR."""
     columns = list(data.keys())
     n_rows = len(next(iter(data.values()))) if data else 0

@@ -29,7 +29,7 @@ async def filter_gtfs(
     settings: SettingsDep,
     gtfs_zip: typing.Annotated[UploadFile, File(description="GTFS zip to filter")],
     filter_values: typing.Annotated[
-        typing.List[str],
+        list[str],
         Form(min_length=1, description="values to keep (route ids or trip ids)"),
     ],
     filter_type: typing.Annotated[

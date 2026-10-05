@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-import typing
 
 import click
 
-from gtfs_filtering.core import perform_filter, FilterType
+from gtfs_filtering.core import FilterType, perform_filter
 
 
 @click.command()
@@ -29,7 +28,7 @@ def cli(
     filter_type: str,
     input_gtfs_zip: str,
     output_gtfs_zip: str,
-    filter_values: typing.List[str],
+    filter_values: list[str],
 ):
     try:
         perform_filter(

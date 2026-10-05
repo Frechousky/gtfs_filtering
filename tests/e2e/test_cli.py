@@ -1,7 +1,6 @@
 import io
 import os
 import subprocess
-import typing
 import zipfile
 
 import duckdb
@@ -14,10 +13,13 @@ CLI_PATH = os.path.join(ROOT_FOLDER, "dist", "cli")
 
 
 def test_cli__when_filtering_by_route_id__filters_by_route_id(
-    gtfs_nyc: str, output_gtfs: str, route_ids: typing.List[str], validate_gtfs
+    gtfs_nyc: str, output_gtfs: str, route_ids: list[str], validate_gtfs
 ):
     output = subprocess.run(
-        [CLI_PATH, gtfs_nyc, output_gtfs, *route_ids], capture_output=True, text=True
+        [CLI_PATH, gtfs_nyc, output_gtfs, *route_ids],
+        capture_output=True,
+        text=True,
+        check=False,
     )
 
     assert output.returncode == 0, "command is successful"
@@ -38,11 +40,12 @@ def test_cli__when_filtering_by_route_id__filters_by_route_id(
 
 
 def test_cli__when_filtering_by_trip_id__filters_by_trip_id(
-    gtfs_nyc: str, output_gtfs: str, trip_ids: typing.List[str], validate_gtfs
+    gtfs_nyc: str, output_gtfs: str, trip_ids: list[str], validate_gtfs
 ):
     output = subprocess.run(
         [CLI_PATH, "--filter-type", "trip_id", gtfs_nyc, output_gtfs, *trip_ids],
         capture_output=True,
+        check=False,
         text=True,
     )
 
@@ -73,15 +76,17 @@ def test_cli__when_filtering_by_trip_id__filters_by_trip_id(
         ["--help", "gtfs.zip", "output.zip", "--help"],
     ],
 )
-def test_cli__when_help_option_is_present__displays_help(args: typing.List[str]):
-    output = subprocess.run([CLI_PATH, *args], capture_output=True, text=True)
+def test_cli__when_help_option_is_present__displays_help(args: list[str]):
+    output = subprocess.run(
+        [CLI_PATH, *args], capture_output=True, text=True, check=False
+    )
 
     assert output.returncode == 0, "command should be successful"
     assert "Usage: cli" in output.stdout, "command should display help message to user"
 
 
 def test_cli__when_input_gtfs_zip_arg_is_missing__fails_and_displays_error_message():
-    output = subprocess.run(CLI_PATH, capture_output=True, text=True)
+    output = subprocess.run(CLI_PATH, capture_output=True, text=True, check=False)
 
     assert output.returncode != 0, "command should fail"
     assert "Usage: cli" in output.stderr, "command should display help message to user"
@@ -92,7 +97,7 @@ def test_cli__when_input_gtfs_zip_arg_is_missing__fails_and_displays_error_messa
 
 def test_cli__when_input_gtfs_zip_does_not_exists__fails_and_displays_error_message():
     output = subprocess.run(
-        [CLI_PATH, "non_existing_file.zip"], capture_output=True, text=True
+        [CLI_PATH, "non_existing_file.zip"], capture_output=True, text=True, check=False
     )
 
     assert output.returncode != 0, "command should fail"
@@ -106,7 +111,9 @@ def test_cli__when_input_gtfs_zip_does_not_exists__fails_and_displays_error_mess
 def test_cli__when_output_gtfs_zip_arg_is_missing__fails_and_displays_error_message(
     gtfs_nyc: str,
 ):
-    output = subprocess.run([CLI_PATH, gtfs_nyc], capture_output=True, text=True)
+    output = subprocess.run(
+        [CLI_PATH, gtfs_nyc], capture_output=True, text=True, check=False
+    )
 
     assert output.returncode != 0, "command should fail"
     assert "Usage: cli" in output.stderr, "command should display help message to user"
@@ -116,13 +123,14 @@ def test_cli__when_output_gtfs_zip_arg_is_missing__fails_and_displays_error_mess
 
 
 def test_cli__when_output_gtfs_zip_exists_and_overwrite_flag_not_set__fails_and_displays_error_message(
-    gtfs_nyc: str, existing_output_gtfs: str, route_ids: typing.List[str]
+    gtfs_nyc: str, existing_output_gtfs: str, route_ids: list[str]
 ):
     assert os.path.isfile(existing_output_gtfs), "output_gtfs exists"
 
     output = subprocess.run(
         [CLI_PATH, gtfs_nyc, existing_output_gtfs, *route_ids],
         capture_output=True,
+        check=False,
         text=True,
     )
 
@@ -136,7 +144,7 @@ def test_cli__when_output_gtfs_zip_exists_and_overwrite_flag_not_set__fails_and_
 def test_cli__when_output_gtfs_zip_exists_and_overwrite_flag_set__is_successful(
     gtfs_nyc: str,
     existing_output_gtfs: str,
-    route_ids: typing.List[str],
+    route_ids: list[str],
     overwrite_opt: str,
 ):
     assert os.path.isfile(existing_output_gtfs), "output_gtfs exists"
@@ -145,6 +153,7 @@ def test_cli__when_output_gtfs_zip_exists_and_overwrite_flag_set__is_successful(
     output = subprocess.run(
         [CLI_PATH, overwrite_opt, gtfs_nyc, existing_output_gtfs, *route_ids],
         capture_output=True,
+        check=False,
         text=True,
     )
 
@@ -155,11 +164,12 @@ def test_cli__when_output_gtfs_zip_exists_and_overwrite_flag_set__is_successful(
 
 
 def test_cli__when_required_file_is_missing_in_input_gtfs_zip__fails_and_displays_error_message(
-    gtfs_missing_routes_txt: str, output_gtfs: str, route_ids: typing.List[str]
+    gtfs_missing_routes_txt: str, output_gtfs: str, route_ids: list[str]
 ):
     output = subprocess.run(
         [CLI_PATH, gtfs_missing_routes_txt, output_gtfs, *route_ids],
         capture_output=True,
+        check=False,
         text=True,
     )
 
@@ -170,11 +180,12 @@ def test_cli__when_required_file_is_missing_in_input_gtfs_zip__fails_and_display
 
 
 def test_cli__when_required_file_is_empty_in_input_gtfs_zip__fails_and_displays_error_message(
-    gtfs_empty_routes_txt: str, output_gtfs: str, route_ids: typing.List[str]
+    gtfs_empty_routes_txt: str, output_gtfs: str, route_ids: list[str]
 ):
     output = subprocess.run(
         [CLI_PATH, gtfs_empty_routes_txt, output_gtfs, *route_ids],
         capture_output=True,
+        check=False,
         text=True,
     )
 
