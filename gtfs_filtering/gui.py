@@ -24,7 +24,11 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from gtfs_filtering.core import FilterType, perform_filter
+from gtfs_filtering.core import (
+    FilterType,
+    get_unique_not_null_column_values,
+    perform_filter,
+)
 
 _ASSETS_DIR = pathlib.Path(__file__).resolve().parent / "assets"
 if not _ASSETS_DIR.exists():
@@ -53,6 +57,7 @@ class MainWindowModel:
     filter_type: FilterType = FilterType.ROUTE_ID
     route_ids_from_input_gtfs: list[str] = None
     trip_ids_from_input_gtfs: list[str] = None
+    agency_ids_from_input_gtfs: list[str] = None
 
     def output_gtfs_zip_fullpath(self):
         return os.path.join(self.output_gtfs_zip_folder, self.output_gtfs_zip_filename)
@@ -197,19 +202,25 @@ class MainWindow(QMainWindow):
             self.overwrite_output_gtfs_check_box.checkState() == Qt.CheckState.Checked
         )
 
-    def _retrieve_route_ids_and_trip_ids_from_input_gtfs(self):
+    def _retrieve_filter_values_from_input_gtfs(self):
+        agency_tmp = None
         routes_tmp = None
         trips_tmp = None
         try:
             input_gtfs_zip = zipfile.ZipFile(self.model.input_gtfs_zip)
+            agency_bytes = input_gtfs_zip.read("agency.txt")
             routes_bytes = input_gtfs_zip.read("routes.txt")
             trips_bytes = input_gtfs_zip.read("trips.txt")
+            with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as f:
+                f.write(agency_bytes)
+                agency_tmp = f.name
             with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as f:
                 f.write(routes_bytes)
                 routes_tmp = f.name
             with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as f:
                 f.write(trips_bytes)
                 trips_tmp = f.name
+            agency = duckdb.read_csv(agency_tmp, all_varchar=True)
             routes = duckdb.read_csv(routes_tmp, all_varchar=True)
             trips = duckdb.read_csv(trips_tmp, all_varchar=True)
             self.model.route_ids_from_input_gtfs = [
@@ -218,11 +229,20 @@ class MainWindow(QMainWindow):
             self.model.trip_ids_from_input_gtfs = [
                 row[0] for row in trips.select('"trip_id"').fetchall()
             ]
+            # agency_id is not mandatory in agency.txt when there is a single agency
+            self.model.agency_ids_from_input_gtfs = (
+                get_unique_not_null_column_values(agency, "agency_id")
+                if "agency_id" in agency.columns
+                else []
+            )
+            self.model.agency_ids_from_input_gtfs.sort()
             self.model.route_ids_from_input_gtfs.sort()
             self.model.trip_ids_from_input_gtfs.sort()
         except Exception:  # noqa: BLE001 report any reading error to user
             open_error_message_box(i18n.t("error_reading_input_gtfs"))
         finally:
+            if agency_tmp and os.path.exists(agency_tmp):
+                os.unlink(agency_tmp)
             if routes_tmp and os.path.exists(routes_tmp):
                 os.unlink(routes_tmp)
             if trips_tmp and os.path.exists(trips_tmp):
@@ -234,6 +254,8 @@ class MainWindow(QMainWindow):
             self.filter_values_list.addItems(self.model.route_ids_from_input_gtfs)
         elif self._get_filter_type() == FilterType.TRIP_ID:
             self.filter_values_list.addItems(self.model.trip_ids_from_input_gtfs)
+        elif self._get_filter_type() == FilterType.AGENCY_ID:
+            self.filter_values_list.addItems(self.model.agency_ids_from_input_gtfs)
 
     def on__select_input_gtfs_zip__clicked_handler(self):
         input_gtfs_zip, _ = QFileDialog.getOpenFileName(
@@ -247,7 +269,7 @@ class MainWindow(QMainWindow):
             self.input_gtfs_zip_selected_file_line_edit.setText(
                 self.model.input_gtfs_zip
             )
-            self._retrieve_route_ids_and_trip_ids_from_input_gtfs()
+            self._retrieve_filter_values_from_input_gtfs()
             self._update_filter_values()
             self.filter_type_select.setEnabled(True)
             self.delete_filter_values_push_button.setEnabled(True)

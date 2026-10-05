@@ -117,6 +117,21 @@ def test_filter__when_filtering_by_trip_id__returns_filtered_gtfs(
     assert read_output_column(response.content, "trips.txt", "trip_id") == [trip_id]
 
 
+def test_filter__when_filtering_by_agency_id__returns_filtered_gtfs(
+    client: TestClient,
+):
+    response = client.post(
+        FILTER_URL,
+        files={"gtfs_zip": ("gtfs.zip", read_gtfs("gtfs_nyc.zip"), "application/zip")},
+        data={"filter_type": "agency_id", "filter_values": ["MTA NYCT"]},
+    )
+
+    assert response.status_code == 200
+    assert read_output_column(response.content, "agency.txt", "agency_id") == [
+        "MTA NYCT"
+    ]
+
+
 def test_filter__when_filter_values_are_missing__returns_422(client: TestClient):
     response = client.post(
         FILTER_URL,

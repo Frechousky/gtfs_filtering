@@ -1,11 +1,12 @@
 # gtfs-filtering
 
-Filter a [GTFS](https://gtfs.org/documentation/schedule/reference/) feed by route ID or trip ID. Available as a CLI tool, a desktop GUI application and a web API.
+Filter a [GTFS](https://gtfs.org/documentation/schedule/reference/) feed by route ID, trip ID or agency ID. Available as a CLI tool, a desktop GUI application and a web API.
 
 ## Features
 
 - Filter by **route ID**: keeps all trips, stop times, shapes, calendars, etc. linked to the selected routes
 - Filter by **trip ID**: resolves to the parent routes then applies the same full filtering
+- Filter by **agency ID**: resolves to the routes operated by the selected agencies then applies the same full filtering
 - Reads and writes standard zipped GTFS archives
 - Built on [DuckDB](https://duckdb.org/) for fast in-memory SQL filtering
 
@@ -36,7 +37,7 @@ uv run --extra cli python -m gtfs_filtering.cli INPUT_GTFS_ZIP OUTPUT_GTFS_ZIP F
 
 | Option | Default | Description |
 |---|---|---|
-| `-t`, `--filter-type` | `route_id` | `route_id` or `trip_id` |
+| `-t`, `--filter-type` | `route_id` | `route_id`, `trip_id` or `agency_id` |
 | `-o`, `--overwrite` | off | Overwrite output file if it already exists |
 
 **Examples**
@@ -47,6 +48,9 @@ uv run --extra cli python -m gtfs_filtering.cli input.zip output.zip 1 2 3
 
 # Filter by trip ID
 uv run --extra cli python -m gtfs_filtering.cli --filter-type trip_id input.zip output.zip TRIP_ID_1
+
+# Filter by agency ID
+uv run --extra cli python -m gtfs_filtering.cli --filter-type agency_id input.zip output.zip AGENCY_ID_1
 
 # Overwrite existing output
 uv run --extra cli python -m gtfs_filtering.cli -o input.zip output.zip 1 2 3
@@ -90,7 +94,7 @@ docker run -p 8000:8000 -e GTFS_FILTERING_MAX_UPLOAD_SIZE_MB=500 gtfs-filtering-
 |---|---|---|
 | `gtfs_zip` | yes | GTFS zip to filter |
 | `filter_values` | yes | Value to keep, repeat the field for several values |
-| `filter_type` | no | `route_id` (default) or `trip_id` |
+| `filter_type` | no | `route_id` (default), `trip_id` or `agency_id` |
 
 ```bash
 curl -F gtfs_zip=@input.zip -F filter_values=1 -F filter_values=2 \

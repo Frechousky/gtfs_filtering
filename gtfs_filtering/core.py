@@ -291,7 +291,11 @@ def filter_by_route_id(gtfs_in: GTFS, route_ids: list[str]) -> GTFS:
     feed_info = gtfs_in.feed_info
 
     routes = filter_by_column_values(routes, "route_id", route_ids)
-    agency_ids = get_unique_not_null_column_values(routes, "agency_id")
+    agency_ids = (
+        get_unique_not_null_column_values(routes, "agency_id")
+        if "agency_id" in routes.columns
+        else []
+    )
 
     if len(agency_ids):
         # agency_id is not mandatory in routes.txt, make sure there is at least one non-null agency_id
@@ -445,9 +449,41 @@ def filter_by_trip_id(gtfs_in: GTFS, trip_ids: list[str]) -> GTFS:
     return filter_by_route_id(gtfs_in, route_ids)
 
 
+def filter_by_agency_id(gtfs_in: GTFS, agency_ids: list[str]) -> GTFS:
+    """
+    Filters all GTFS files by agency id
+
+    Args:
+        gtfs_in: parsed GTFS input
+        agency_ids: agency ids to keep
+
+    Returns:
+        Filtered GTFS by agency id
+    """
+    routes = gtfs_in.routes
+    if "agency_id" in routes.columns and len(
+        get_unique_not_null_column_values(routes, "agency_id")
+    ):
+        filtered_routes = filter_by_column_values(routes, "agency_id", agency_ids)
+    else:
+        # agency_id is not mandatory in routes.txt when there is a single agency: all routes belong to it
+        feed_agency_ids = (
+            get_unique_not_null_column_values(gtfs_in.agency, "agency_id")
+            if "agency_id" in gtfs_in.agency.columns
+            else []
+        )
+        if set(feed_agency_ids) & set(agency_ids):
+            filtered_routes = routes
+        else:
+            filtered_routes = routes.filter("1=0")
+    route_ids = get_unique_not_null_column_values(filtered_routes, "route_id")
+    return filter_by_route_id(gtfs_in, route_ids)
+
+
 class FilterType(enum.StrEnum):
     ROUTE_ID = "route_id"
     TRIP_ID = "trip_id"
+    AGENCY_ID = "agency_id"
 
 
 def perform_filter(
@@ -458,7 +494,7 @@ def perform_filter(
     overwrite_output_gtfs: bool,
 ) -> None:
     """
-    Unzip input_gtfs_zip, parse and filter it by route_id or trip_id.
+    Unzip input_gtfs_zip, parse and filter it by route_id, trip_id or agency_id.
     Filtered GTFS is zipped in output_gtfs_zip.
     Clean all files generated except output_gtfs_zip.
 
@@ -486,6 +522,8 @@ def perform_filter(
                 gtfs = filter_by_route_id(gtfs, filter_values)
             case FilterType.TRIP_ID:
                 gtfs = filter_by_trip_id(gtfs, filter_values)
+            case FilterType.AGENCY_ID:
+                gtfs = filter_by_agency_id(gtfs, filter_values)
             case _:
                 raise ValueError(f"Invalid filter type {filter_type}.")
         save_gtfs(gtfs, extract_dir)

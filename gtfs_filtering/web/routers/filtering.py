@@ -30,14 +30,17 @@ async def filter_gtfs(
     gtfs_zip: typing.Annotated[UploadFile, File(description="GTFS zip to filter")],
     filter_values: typing.Annotated[
         list[str],
-        Form(min_length=1, description="values to keep (route ids or trip ids)"),
+        Form(
+            min_length=1,
+            description="values to keep (route ids, trip ids or agency ids)",
+        ),
     ],
     filter_type: typing.Annotated[
         FilterType, Form(description="type of filtering")
     ] = FilterType.ROUTE_ID,
 ) -> FileResponse:
     """
-    Filters an uploaded GTFS zip by route id or trip id and returns the filtered GTFS zip
+    Filters an uploaded GTFS zip by route id, trip id or agency id and returns the filtered GTFS zip
     """
     workdir = services.create_workdir()
     try:

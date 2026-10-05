@@ -11,7 +11,7 @@ def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
         title=settings.app_name,
-        summary="Filter a GTFS feed by route ID or trip ID",
+        summary="Filter a GTFS feed by route ID, trip ID or agency ID",
     )
     register_exception_handlers(app)
     app.include_router(health.router)
