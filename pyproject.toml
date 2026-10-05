@@ -9,6 +9,8 @@ dependencies = [
     "PyQt6>=6",
     "pytest>=8.4.2",
     "fsspec>=2026.6.0",
+    "fastapi[standard]>=0.115",
+    "pydantic-settings>=2",
 ]
 
 [dependency-groups]
