@@ -71,7 +71,7 @@ make web                                                                # server
 uv run --extra web uvicorn gtfs_filtering.web.main:app --reload           # development server with auto-reload
 ```
 
-Interactive documentation is served at `http://localhost:8000/docs`.
+A web page to filter a GTFS zip (route, trip or agency IDs are picked from checkboxes) is served at `http://localhost:8000/` and interactive documentation at `http://localhost:8000/docs`.
 
 **Docker**
 
@@ -85,8 +85,10 @@ docker run -p 8000:8000 -e GTFS_FILTERING_MAX_UPLOAD_SIZE_MB=500 gtfs-filtering-
 
 | Method | Path | Description |
 |---|---|---|
+| `GET` | `/` | Web page to filter a GTFS zip |
 | `GET` | `/health` | Liveness probe |
 | `POST` | `/api/v1/filter` | Filters an uploaded GTFS zip, returns the filtered GTFS zip |
+| `POST` | `/api/v1/filter/values` | Lists route IDs, trip IDs and agency IDs of an uploaded GTFS zip |
 
 `POST /api/v1/filter` takes a `multipart/form-data` body:
 
@@ -99,6 +101,13 @@ docker run -p 8000:8000 -e GTFS_FILTERING_MAX_UPLOAD_SIZE_MB=500 gtfs-filtering-
 ```bash
 curl -F gtfs_zip=@input.zip -F filter_values=1 -F filter_values=2 \
      -o output.zip http://localhost:8000/api/v1/filter
+```
+
+`POST /api/v1/filter/values` takes the same `gtfs_zip` field and returns sorted IDs (`agency_ids` is empty when `agency.txt` has no `agency_id` column):
+
+```bash
+curl -F gtfs_zip=@input.zip http://localhost:8000/api/v1/filter/values
+# {"route_ids": ["1", "2", ...], "trip_ids": [...], "agency_ids": ["MTA NYCT"]}
 ```
 
 **Configuration** (environment variables or `.env` file)

@@ -8,7 +8,7 @@ from starlette.background import BackgroundTask
 from gtfs_filtering.core import FilterType
 from gtfs_filtering.web import services
 from gtfs_filtering.web.dependencies import SettingsDep
-from gtfs_filtering.web.schemas import ErrorResponse
+from gtfs_filtering.web.schemas import ErrorResponse, FilterValuesResponse
 
 router = APIRouter(prefix="/filter", tags=["filtering"])
 
@@ -69,4 +69,41 @@ async def filter_gtfs(
         filename=services.OUTPUT_GTFS_FILENAME,
         # workdir is removed once response has been sent
         background=BackgroundTask(services.remove_workdir, workdir),
+    )
+
+
+@router.post(
+    "/values",
+    responses={
+        status.HTTP_413_CONTENT_TOO_LARGE: {"model": ErrorResponse},
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {"model": ErrorResponse},
+    },
+)
+async def list_filter_values(
+    settings: SettingsDep,
+    gtfs_zip: typing.Annotated[
+        UploadFile, File(description="GTFS zip to retrieve filter values from")
+    ],
+) -> FilterValuesResponse:
+    """
+    Lists route ids, trip ids and agency ids of an uploaded GTFS zip, i.e. values accepted to filter it
+    """
+    workdir = services.create_workdir()
+    try:
+        input_gtfs_zip = await services.save_upload(
+            gtfs_zip,
+            workdir,
+            settings.max_upload_size_bytes,
+            settings.upload_chunk_size_bytes,
+        )
+        filter_values = await run_in_threadpool(
+            services.list_filter_values, input_gtfs_zip, settings
+        )
+    finally:
+        services.remove_workdir(workdir)
+
+    return FilterValuesResponse(
+        route_ids=filter_values[FilterType.ROUTE_ID],
+        trip_ids=filter_values[FilterType.TRIP_ID],
+        agency_ids=filter_values[FilterType.AGENCY_ID],
     )

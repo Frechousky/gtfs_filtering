@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gtfs-filtering</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --text: #1c2330;
+    --muted: #5d6675;
+    --border: #d5d9e0;
+    --accent: #1f6feb;
+    --accent-text: #ffffff;
+    --error-bg: #fdecec;
+    --error-text: #a12626;
+    --success-bg: #e8f5ec;
+    --success-text: #1d6b35;
+    --radius: 8px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b;
+      --surface: #1b2029;
+      --text: #e5e8ee;
+      --muted: #9aa3b2;
+      --border: #313846;
+      --accent: #4c8dff;
+      --accent-text: #0b0e13;
+      --error-bg: #3a1c1f;
+      --error-text: #ff9a9a;
+      --success-bg: #17301f;
+      --success-text: #8be0a4;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 2rem 1rem;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 36rem; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin: 0 0 0.25rem; }
+  .lead { color: var(--muted); margin: 0 0 1.5rem; }
+  form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    display: grid;
+    gap: 1.25rem;
+  }
+  label, legend { display: block; font-weight: 600; margin-bottom: 0.4rem; }
+  fieldset { border: 0; margin: 0; padding: 0; }
+  .hint { color: var(--muted); font-size: 0.85rem; margin-top: 0.3rem; }
+  input[type="file"] {
+    width: 100%;
+    font: inherit;
+    color: inherit;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.55rem 0.7rem;
+  }
+  .choices { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .choices label {
+    font-weight: 400;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+  }
+  .choices label:has(input:checked) { border-color: var(--accent); }
+  button {
+    font: inherit;
+    font-weight: 600;
+    background: var(--accent);
+    color: var(--accent-text);
+    border: 0;
+    border-radius: var(--radius);
+    padding: 0.7rem 1rem;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; cursor: progress; }
+  .status { border-radius: var(--radius); padding: 0.7rem 0.9rem; }
+  .status.error { background: var(--error-bg); color: var(--error-text); }
+  .status.success { background: var(--success-bg); color: var(--success-text); }
+  .status a { color: inherit; font-weight: 600; }
+  .choices label:has(input:disabled) { opacity: 0.5; cursor: not-allowed; }
+  .choices .count { color: var(--muted); font-size: 0.85rem; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+  .toolbar input[type="search"] {
+    flex: 1 1 12rem;
+    min-width: 0;
+    font: inherit;
+    color: inherit;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.45rem 0.7rem;
+  }
+  button.secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    font-weight: 400;
+    padding: 0.45rem 0.8rem;
+  }
+  .values {
+    max-height: 18rem;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    padding: 0.25rem 0;
+  }
+  .values label {
+    font-weight: 400;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.2rem 0.7rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.9rem;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+  }
+  .values label:hover { background: var(--surface); }
+  .values .empty { color: var(--muted); padding: 0.5rem 0.7rem; }
+  footer { margin-top: 1.5rem; color: var(--muted); font-size: 0.85rem; text-align: center; }
+  footer a { color: inherit; }
+</style>
+</head>
+<body>
+<main>
+  <h1>GTFS filtering</h1>
+  <p class="lead">Upload a GTFS zip and keep only the selected routes, trips or agencies.</p>
+
+  <form id="filter-form">
+    <div>
+      <label for="gtfs_zip">GTFS zip</label>
+      <input id="gtfs_zip" name="gtfs_zip" type="file" accept=".zip,application/zip" required>
+      <div class="hint">Maximum size: {{MAX_UPLOAD_SIZE_MB}} MB</div>
+    </div>
+
+    <fieldset id="filter-section" disabled>
+      <legend>Filter by</legend>
+      <div class="choices">
+        <label><input type="radio" name="filter_type" value="route_id" checked> Route ID <span class="count" data-count="route_id"></span></label>
+        <label><input type="radio" name="filter_type" value="trip_id"> Trip ID <span class="count" data-count="trip_id"></span></label>
+        <label><input type="radio" name="filter_type" value="agency_id"> Agency ID <span class="count" data-count="agency_id"></span></label>
+      </div>
+    </fieldset>
+
+    <fieldset id="values-section" hidden>
+      <legend>Values to keep</legend>
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Search…" aria-label="Search values">
+        <button id="select-all" class="secondary" type="button">Select all</button>
+        <button id="clear" class="secondary" type="button">Clear</button>
+      </div>
+      <div id="values" class="values"></div>
+      <div id="values-hint" class="hint"></div>
+    </fieldset>
+
+    <button id="submit" type="submit" disabled>Filter GTFS</button>
+    <div id="status" class="status" role="status" hidden></div>
+  </form>
+
+  <footer><a href="/docs">API documentation</a></footer>
+</main>
+
+<script>
+  const MAX_UPLOAD_SIZE_BYTES = {{MAX_UPLOAD_SIZE_MB}} * 1024 * 1024;
+  // rendering tens of thousands of checkboxes freezes the page, search narrows the list instead
+  const MAX_RENDERED_VALUES = 500;
+  const RESPONSE_KEYS = { route_id: "route_ids", trip_id: "trip_ids", agency_id: "agency_ids" };
+
+  const form = document.getElementById("filter-form");
+  const fileInput = document.getElementById("gtfs_zip");
+  const filterSection = document.getElementById("filter-section");
+  const valuesSection = document.getElementById("values-section");
+  const valuesBox = document.getElementById("values");
+  const valuesHint = document.getElementById("values-hint");
+  const search = document.getElementById("search");
+  const submitButton = document.getElementById("submit");
+  const statusBox = document.getElementById("status");
+
+  // values available and values selected, per filter type
+  let available = null;
+  let selected = null;
+  let loadId = 0;
+  let downloadUrl = null;
+
+  function showStatus(kind, text) {
+    statusBox.className = "status " + kind;
+    statusBox.textContent = text;
+    statusBox.hidden = false;
+  }
+
+  function hideStatus() {
+    statusBox.hidden = true;
+  }
+
+  async function errorMessage(response) {
+    try {
+      const body = await response.json();
+      if (typeof body.detail === "string") return body.detail;
+      // FastAPI validation errors
+      if (Array.isArray(body.detail)) return body.detail.map((e) => e.msg).join(" ");
+    } catch (_) { /* not a JSON body */ }
+    return "Request failed with status " + response.status + ".";
+  }
+
+  function filterType() {
+    return form.filter_type.value;
+  }
+
+  function matchingValues() {
+    const query = search.value.trim().toLowerCase();
+    const values = available[filterType()];
+    return query ? values.filter((v) => v.toLowerCase().includes(query)) : values;
+  }
+
+  function updateSummary(matching) {
+    const type = filterType();
+    const total = available[type].length;
+    let hint = selected[type].size + " selected of " + total + ".";
+    if (matching.length > MAX_RENDERED_VALUES) {
+      hint += " Showing first " + MAX_RENDERED_VALUES + " of " + matching.length +
+        " matching values, refine search to see others.";
+    }
+    valuesHint.textContent = hint;
+    submitButton.disabled = selected[type].size === 0;
+  }
+
+  function renderValues() {
+    const type = filterType();
+    const matching = matchingValues();
+    const fragment = document.createDocumentFragment();
+    for (const value of matching.slice(0, MAX_RENDERED_VALUES)) {
+      const label = document.createElement("label");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.value = value;
+      checkbox.checked = selected[type].has(value);
+      label.append(checkbox, document.createTextNode(value));
+      fragment.append(label);
+    }
+    if (matching.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = available[type].length ? "No matching value." : "No value in this GTFS.";
+      fragment.append(empty);
+    }
+    valuesBox.replaceChildren(fragment);
+    updateSummary(matching);
+  }
+
+  function resetValues() {
+    available = null;
+    selected = null;
+    filterSection.disabled = true;
+    valuesSection.hidden = true;
+    submitButton.disabled = true;
+    document.querySelectorAll("[data-count]").forEach((el) => { el.textContent = ""; });
+  }
+
+  async function loadValues(file) {
+    const id = ++loadId;
+    resetValues();
+    if (!file) return hideStatus();
+    if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+      return showStatus("error", "File exceeds maximum size of {{MAX_UPLOAD_SIZE_MB}} MB.");
+    }
+    const data = new FormData();
+    data.append("gtfs_zip", file);
+    showStatus("", "Reading GTFS…");
+    try {
+      const response = await fetch("api/v1/filter/values", { method: "POST", body: data });
+      // ignore response when another file has been selected meanwhile
+      if (id !== loadId) return;
+      if (!response.ok) return showStatus("error", await errorMessage(response));
+      const body = await response.json();
+      if (id !== loadId) return;
+      available = {};
+      selected = {};
+      for (const [type, key] of Object.entries(RESPONSE_KEYS)) {
+        available[type] = body[key];
+        selected[type] = new Set();
+        document.querySelector('[data-count="' + type + '"]').textContent = "(" + body[key].length + ")";
+        form.querySelector('input[name="filter_type"][value="' + type + '"]').disabled = body[key].length === 0;
+      }
+      form.querySelector('input[name="filter_type"][value="route_id"]').checked = true;
+      search.value = "";
+      filterSection.disabled = false;
+      valuesSection.hidden = false;
+      hideStatus();
+      renderValues();
+    } catch (e) {
+      if (id === loadId) showStatus("error", "Network error: " + e.message);
+    }
+  }
+
+  fileInput.addEventListener("change", () => loadValues(fileInput.files[0]));
+
+  form.addEventListener("change", (event) => {
+    if (event.target.name === "filter_type") {
+      search.value = "";
+      renderValues();
+    }
+  });
+
+  valuesBox.addEventListener("change", (event) => {
+    const checkbox = event.target;
+    const values = selected[filterType()];
+    if (checkbox.checked) values.add(checkbox.value); else values.delete(checkbox.value);
+    updateSummary(matchingValues());
+  });
+
+  search.addEventListener("input", renderValues);
+  // Enter in search field must not submit the form
+  search.addEventListener("keydown", (event) => { if (event.key === "Enter") event.preventDefault(); });
+
+  document.getElementById("select-all").addEventListener("click", () => {
+    const values = selected[filterType()];
+    matchingValues().forEach((v) => values.add(v));
+    renderValues();
+  });
+
+  document.getElementById("clear").addEventListener("click", () => {
+    const values = selected[filterType()];
+    matchingValues().forEach((v) => values.delete(v));
+    renderValues();
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const file = fileInput.files[0];
+    if (!file || !available) return showStatus("error", "Please select a GTFS zip.");
+    const type = filterType();
+    const values = [...selected[type]];
+    if (values.length === 0) return showStatus("error", "Please select at least one value.");
+
+    const data = new FormData();
+    data.append("gtfs_zip", file);
+    data.append("filter_type", type);
+    values.forEach((v) => data.append("filter_values", v));
+
+    submitButton.disabled = true;
+    showStatus("", "Filtering…");
+    try {
+      const response = await fetch("api/v1/filter", { method: "POST", body: data });
+      if (!response.ok) return showStatus("error", await errorMessage(response));
+      const blob = await response.blob();
+      if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+      downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = "filtered_gtfs.zip";
+      link.textContent = "Download filtered_gtfs.zip";
+      showStatus("success", "GTFS filtered. ");
+      statusBox.append(link);
+      link.click();
+    } catch (e) {
+      showStatus("error", "Network error: " + e.message);
+    } finally {
+      submitButton.disabled = !selected || selected[filterType()].size === 0;
+    }
+  });
+</script>
+</body>
+</html>
