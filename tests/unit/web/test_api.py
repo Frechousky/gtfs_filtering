@@ -1,5 +1,8 @@
 import io
 import os
+import random
+import string
+import struct
 import typing
 import zipfile
 
@@ -26,6 +29,47 @@ def client() -> typing.Iterator[TestClient]:
 def read_gtfs(filename: str) -> bytes:
     with open(os.path.join(DATA_FOLDER, filename), "rb") as f:
         return f.read()
+
+
+def make_zip(entries: typing.Dict[str, bytes]) -> bytes:
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        for filename, content in entries.items():
+            archive.writestr(filename, content)
+    return buffer.getvalue()
+
+
+def random_bytes(size: int) -> bytes:
+    """returns hardly compressible bytes"""
+    return "".join(random.choices(string.ascii_letters, k=size)).encode()
+
+
+def forge_declared_file_size(zip_bytes: bytes, declared_size: int) -> bytes:
+    """overwrites uncompressed size declared in local and central headers of a single entry zip"""
+    data = bytearray(zip_bytes)
+    local_header = data.index(b"PK\x03\x04")
+    struct.pack_into("<I", data, local_header + 22, declared_size)
+    central_header = data.index(b"PK\x01\x02")
+    struct.pack_into("<I", data, central_header + 24, declared_size)
+    return bytes(data)
+
+
+def post_zip(client: TestClient, content: bytes):
+    return client.post(
+        FILTER_URL,
+        files={"gtfs_zip": ("gtfs.zip", content, "application/zip")},
+        data={"filter_values": ["1"]},
+    )
+
+
+@pytest.fixture()
+def client_with_settings() -> typing.Callable[..., TestClient]:
+    def make_client(**settings) -> TestClient:
+        app = create_app()
+        app.dependency_overrides[get_settings] = lambda: Settings(**settings)
+        return TestClient(app)
+
+    return make_client
 
 
 def read_output_column(
@@ -154,3 +198,54 @@ def test_filter__when_uploaded_file_is_too_large__returns_413():
         )
 
     assert response.status_code == 413
+
+
+def test_filter__when_archive_has_too_many_entries__returns_413(
+    client_with_settings: typing.Callable[..., TestClient],
+):
+    content = make_zip({f"file_{i}.txt": b"a" for i in range(3)})
+
+    response = post_zip(client_with_settings(max_archive_entries=2), content)
+
+    assert response.status_code == 413
+    assert response.json() == {"detail": "Archive contains more than 2 entries."}
+
+
+def test_filter__when_archive_uncompressed_size_is_too_large__returns_413(
+    client_with_settings: typing.Callable[..., TestClient],
+):
+    content = make_zip({"agency.txt": random_bytes(2 * 1024 * 1024)})
+
+    response = post_zip(client_with_settings(max_uncompressed_size_mb=1), content)
+
+    assert response.status_code == 413
+    assert "uncompressed size exceeds maximum size" in response.json()["detail"]
+
+
+def test_filter__when_archive_entry_compression_ratio_is_too_high__returns_413(
+    client: TestClient,
+):
+    content = make_zip({"stop_times.txt": b"0" * 10 * 1024 * 1024})
+
+    response = post_zip(client, content)
+
+    assert response.status_code == 413
+    assert response.json() == {
+        "detail": "Archive entry 'stop_times.txt' exceeds maximum compression ratio of 100."
+    }
+
+
+def test_filter__when_archive_declares_wrong_uncompressed_size__returns_422(
+    client: TestClient,
+):
+    # an archive lying about its uncompressed size must not be extracted beyond declared size
+    content = forge_declared_file_size(
+        make_zip({"agency.txt": random_bytes(10_000)}), 10
+    )
+
+    response = post_zip(client, content)
+
+    assert response.status_code == 422
+    assert response.json()["detail"].startswith(
+        "Uploaded file is not a valid zip archive"
+    )

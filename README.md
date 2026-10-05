@@ -90,6 +90,9 @@ curl -F gtfs_zip=@input.zip -F filter_values=1 -F filter_values=2 \
 | Variable | Default | Description |
 |---|---|---|
 | `GTFS_FILTERING_MAX_UPLOAD_SIZE_MB` | `200` | Maximum size of uploaded GTFS zip (413 returned above) |
+| `GTFS_FILTERING_MAX_UNCOMPRESSED_SIZE_MB` | `2048` | Maximum total uncompressed size of uploaded GTFS zip (413 returned above) |
+| `GTFS_FILTERING_MAX_ARCHIVE_ENTRIES` | `100` | Maximum number of files in uploaded GTFS zip (413 returned above) |
+| `GTFS_FILTERING_MAX_COMPRESSION_RATIO` | `100` | Maximum compression ratio of a single file in uploaded GTFS zip (413 returned above) |
 
 ## Development
 

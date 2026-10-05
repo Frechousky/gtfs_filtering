@@ -48,7 +48,12 @@ async def filter_gtfs(
             settings.upload_chunk_size_bytes,
         )
         output_gtfs_zip = await run_in_threadpool(
-            services.filter_gtfs, input_gtfs_zip, workdir, filter_type, filter_values
+            services.filter_gtfs,
+            input_gtfs_zip,
+            workdir,
+            filter_type,
+            filter_values,
+            settings,
         )
     except BaseException:
         # errors are converted to HTTP responses by handlers registered in gtfs_filtering.web.errors

@@ -1,11 +1,15 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
-from gtfs_filtering.web.services import InvalidGTFSError, UploadTooLargeError
+from gtfs_filtering.web.services import (
+    InvalidGTFSError,
+    UnsafeArchiveError,
+    UploadTooLargeError,
+)
 
 
-async def _upload_too_large_handler(
-    request: Request, exc: UploadTooLargeError
+async def _content_too_large_handler(
+    request: Request, exc: UploadTooLargeError | UnsafeArchiveError
 ) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_413_CONTENT_TOO_LARGE,
@@ -23,5 +27,6 @@ async def _invalid_gtfs_handler(
 
 
 def register_exception_handlers(app: FastAPI) -> None:
-    app.add_exception_handler(UploadTooLargeError, _upload_too_large_handler)
+    app.add_exception_handler(UploadTooLargeError, _content_too_large_handler)
+    app.add_exception_handler(UnsafeArchiveError, _content_too_large_handler)
     app.add_exception_handler(InvalidGTFSError, _invalid_gtfs_handler)
