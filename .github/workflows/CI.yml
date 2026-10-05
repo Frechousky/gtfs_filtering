@@ -14,7 +14,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --all-groups
+        run: uv sync --all-groups --all-extras
 
       - name: Lint checking
         run: make lint-check

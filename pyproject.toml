@@ -3,19 +3,29 @@ name = "gtfs-filtering"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
-    "click>=8",
     "duckdb>=1",
+]
+
+[project.optional-dependencies]
+cli = [
+    "click>=8",
+]
+gui = [
     "python-i18n[yaml]>=0.3",
     "PyQt6>=6",
-    "pytest>=8.4.2",
-    "fsspec>=2026.6.0",
-    "fastapi[standard]>=0.115",
+]
+web = [
+    "fastapi>=0.115",
     "pydantic-settings>=2",
+    "python-multipart>=0.0.18",
+    "uvicorn>=0.30",
 ]
 
 [dependency-groups]
 dev = [
+    "fsspec>=2026.6.0",
+    "httpx>=0.27",
     "pyinstaller>=6",
-    "pytest>=8",
+    "pytest>=8.4.2",
     "ruff>=0",
 ]

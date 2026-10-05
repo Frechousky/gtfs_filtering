@@ -16,8 +16,12 @@ Filter a [GTFS](https://gtfs.org/documentation/schedule/reference/) feed by rout
 
 ## Installation
 
+Dependencies are split by entrypoint: the CLI, the GUI and the web API each have their own extra on top of the shared base dependencies.
+
 ```bash
-uv sync
+uv sync --extra cli      # CLI (click)
+uv sync --extra gui      # GUI (PyQt6)
+uv sync --extra web      # web API (FastAPI)
 ```
 
 ## Usage
@@ -25,7 +29,7 @@ uv sync
 ### CLI
 
 ```bash
-uv run python -m gtfs_filtering.cli INPUT_GTFS_ZIP OUTPUT_GTFS_ZIP FILTER_VALUE...
+uv run --extra cli python -m gtfs_filtering.cli INPUT_GTFS_ZIP OUTPUT_GTFS_ZIP FILTER_VALUE...
 ```
 
 **Options**
@@ -39,19 +43,19 @@ uv run python -m gtfs_filtering.cli INPUT_GTFS_ZIP OUTPUT_GTFS_ZIP FILTER_VALUE.
 
 ```bash
 # Filter by route IDs 1, 2 and 3
-uv run python -m gtfs_filtering.cli input.zip output.zip 1 2 3
+uv run --extra cli python -m gtfs_filtering.cli input.zip output.zip 1 2 3
 
 # Filter by trip ID
-uv run python -m gtfs_filtering.cli --filter-type trip_id input.zip output.zip TRIP_ID_1
+uv run --extra cli python -m gtfs_filtering.cli --filter-type trip_id input.zip output.zip TRIP_ID_1
 
 # Overwrite existing output
-uv run python -m gtfs_filtering.cli -o input.zip output.zip 1 2 3
+uv run --extra cli python -m gtfs_filtering.cli -o input.zip output.zip 1 2 3
 ```
 
 ### GUI
 
 ```bash
-uv run python -m gtfs_filtering.gui
+uv run --extra gui python -m gtfs_filtering.gui
 ```
 
 ### Web API
@@ -59,11 +63,19 @@ uv run python -m gtfs_filtering.gui
 Built with [FastAPI](https://fastapi.tiangolo.com/).
 
 ```bash
-make web                                             # production server on port 8000
-uv run fastapi dev gtfs_filtering/web/main.py        # development server with auto-reload
+make web                                                                # server on port 8000
+uv run --extra web uvicorn gtfs_filtering.web.main:app --reload           # development server with auto-reload
 ```
 
 Interactive documentation is served at `http://localhost:8000/docs`.
+
+**Docker**
+
+```bash
+docker build -t gtfs-filtering-web .
+docker run -p 8000:8000 gtfs-filtering-web
+docker run -p 8000:8000 -e GTFS_FILTERING_MAX_UPLOAD_SIZE_MB=500 gtfs-filtering-web   # override settings
+```
 
 **Endpoints**
 
