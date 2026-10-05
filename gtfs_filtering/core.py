@@ -5,17 +5,11 @@ import enum
 import logging
 import os
 import shutil
+import tempfile
 import typing
 import zipfile
 
 import duckdb
-
-_IS_WINDOWS = os.name == "nt"  # check if user OS is WINDOWS
-_ZIP_EXTRACT_TMP = (
-    os.path.join("C:\\", "temp", "gtfs-utils-zip_extract_tmp")
-    if _IS_WINDOWS
-    else os.path.join("/tmp", "gtfs-utils-zip_extract_tmp")
-)
 
 
 class EmptyDataError(ValueError):
@@ -482,10 +476,10 @@ def perform_filter(
     """
     if os.path.isfile(output_gtfs_zip) and not overwrite_output_gtfs:
         raise FileExistsError(f"File '{output_gtfs_zip}' already exists.")
-    try:
-        os.makedirs(_ZIP_EXTRACT_TMP, exist_ok=True)
-        zipfile.ZipFile(input_gtfs_zip).extractall(_ZIP_EXTRACT_TMP)
-        gtfs = parse_gtfs(_ZIP_EXTRACT_TMP)
+    # use a dedicated temporary directory per call so concurrent filterings do not collide
+    with tempfile.TemporaryDirectory(prefix="gtfs-filtering-") as extract_dir:
+        zipfile.ZipFile(input_gtfs_zip).extractall(extract_dir)
+        gtfs = parse_gtfs(extract_dir)
         match filter_type:
             case FilterType.ROUTE_ID:
                 gtfs = filter_by_route_id(gtfs, filter_values)
@@ -493,7 +487,5 @@ def perform_filter(
                 gtfs = filter_by_trip_id(gtfs, filter_values)
             case _:
                 raise ValueError(f"Invalid filter type {filter_type}.")
-        save_gtfs(gtfs, _ZIP_EXTRACT_TMP)
-        shutil.make_archive(output_gtfs_zip.rstrip(".zip"), "zip", _ZIP_EXTRACT_TMP)
-    finally:
-        shutil.rmtree(_ZIP_EXTRACT_TMP, ignore_errors=True)
+        save_gtfs(gtfs, extract_dir)
+        shutil.make_archive(output_gtfs_zip.rstrip(".zip"), "zip", extract_dir)

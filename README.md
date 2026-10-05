@@ -1,6 +1,6 @@
 # gtfs-filtering
 
-Filter a [GTFS](https://gtfs.org/documentation/schedule/reference/) feed by route ID or trip ID. Available as both a CLI tool and a desktop GUI application.
+Filter a [GTFS](https://gtfs.org/documentation/schedule/reference/) feed by route ID or trip ID. Available as a CLI tool, a desktop GUI application and a web API.
 
 ## Features
 
@@ -53,6 +53,43 @@ uv run python -m gtfs_filtering.cli -o input.zip output.zip 1 2 3
 ```bash
 uv run python -m gtfs_filtering.gui
 ```
+
+### Web API
+
+Built with [FastAPI](https://fastapi.tiangolo.com/).
+
+```bash
+make web                                             # production server on port 8000
+uv run fastapi dev gtfs_filtering/web/main.py        # development server with auto-reload
+```
+
+Interactive documentation is served at `http://localhost:8000/docs`.
+
+**Endpoints**
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/health` | Liveness probe |
+| `POST` | `/api/v1/filter` | Filters an uploaded GTFS zip, returns the filtered GTFS zip |
+
+`POST /api/v1/filter` takes a `multipart/form-data` body:
+
+| Field | Required | Description |
+|---|---|---|
+| `gtfs_zip` | yes | GTFS zip to filter |
+| `filter_values` | yes | Value to keep, repeat the field for several values |
+| `filter_type` | no | `route_id` (default) or `trip_id` |
+
+```bash
+curl -F gtfs_zip=@input.zip -F filter_values=1 -F filter_values=2 \
+     -o output.zip http://localhost:8000/api/v1/filter
+```
+
+**Configuration** (environment variables or `.env` file)
+
+| Variable | Default | Description |
+|---|---|---|
+| `GTFS_FILTERING_MAX_UPLOAD_SIZE_MB` | `200` | Maximum size of uploaded GTFS zip (413 returned above) |
 
 ## Development
 

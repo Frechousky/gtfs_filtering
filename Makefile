@@ -37,7 +37,11 @@ dist/gui: gtfs_filtering/core.py gtfs_filtering/gui.py pyproject.toml uv.lock
 cli: dist/cli
 gui: dist/gui
 
+# web api
+web:
+	uv run fastapi run gtfs_filtering/web/main.py
+
 clean:
 	rm -rf dist/ .pytest_cache/ .ruff_cache
 
-.PHONY: install-deps install-all-deps update-deps check-deps lint-check lint format-check format e2e unit tests cli gui clean
+.PHONY: install-deps install-all-deps update-deps check-deps lint-check lint format-check format e2e unit tests cli gui web clean
