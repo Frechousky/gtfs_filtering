@@ -3,10 +3,7 @@ import locale
 import os
 import pathlib
 import sys
-import tempfile
-import zipfile
 
-import duckdb
 import i18n
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -26,7 +23,7 @@ from PyQt6.QtWidgets import (
 
 from gtfs_filtering.core import (
     FilterType,
-    get_unique_not_null_column_values,
+    get_filter_values,
     perform_filter,
 )
 
@@ -203,50 +200,14 @@ class MainWindow(QMainWindow):
         )
 
     def _retrieve_filter_values_from_input_gtfs(self):
-        agency_tmp = None
-        routes_tmp = None
-        trips_tmp = None
         try:
-            input_gtfs_zip = zipfile.ZipFile(self.model.input_gtfs_zip)
-            agency_bytes = input_gtfs_zip.read("agency.txt")
-            routes_bytes = input_gtfs_zip.read("routes.txt")
-            trips_bytes = input_gtfs_zip.read("trips.txt")
-            with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as f:
-                f.write(agency_bytes)
-                agency_tmp = f.name
-            with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as f:
-                f.write(routes_bytes)
-                routes_tmp = f.name
-            with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as f:
-                f.write(trips_bytes)
-                trips_tmp = f.name
-            agency = duckdb.read_csv(agency_tmp, all_varchar=True)
-            routes = duckdb.read_csv(routes_tmp, all_varchar=True)
-            trips = duckdb.read_csv(trips_tmp, all_varchar=True)
-            self.model.route_ids_from_input_gtfs = [
-                row[0] for row in routes.select('"route_id"').fetchall()
-            ]
-            self.model.trip_ids_from_input_gtfs = [
-                row[0] for row in trips.select('"trip_id"').fetchall()
-            ]
-            # agency_id is not mandatory in agency.txt when there is a single agency
-            self.model.agency_ids_from_input_gtfs = (
-                get_unique_not_null_column_values(agency, "agency_id")
-                if "agency_id" in agency.columns
-                else []
-            )
-            self.model.agency_ids_from_input_gtfs.sort()
-            self.model.route_ids_from_input_gtfs.sort()
-            self.model.trip_ids_from_input_gtfs.sort()
+            filter_values = get_filter_values(self.model.input_gtfs_zip)
         except Exception:  # noqa: BLE001 report any reading error to user
             open_error_message_box(i18n.t("error_reading_input_gtfs"))
-        finally:
-            if agency_tmp and os.path.exists(agency_tmp):
-                os.unlink(agency_tmp)
-            if routes_tmp and os.path.exists(routes_tmp):
-                os.unlink(routes_tmp)
-            if trips_tmp and os.path.exists(trips_tmp):
-                os.unlink(trips_tmp)
+            return
+        self.model.route_ids_from_input_gtfs = filter_values[FilterType.ROUTE_ID]
+        self.model.trip_ids_from_input_gtfs = filter_values[FilterType.TRIP_ID]
+        self.model.agency_ids_from_input_gtfs = filter_values[FilterType.AGENCY_ID]
 
     def _update_filter_values(self):
         self.filter_values_list.clear()
